@@ -1,0 +1,247 @@
+Parameters:
+  VpcCIDR:
+    Description: Please enter the IP range (CIDR notation) for this VPC
+    Type: String
+    Default: 10.192.0.0/16
+
+  PublicSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the first Availability Zone
+    Type: String
+    Default: 10.192.10.0/24
+
+  PublicSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the second Availability Zone
+    Type: String
+    Default: 10.192.11.0/24
+
+  PrivateSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone
+    Type: String
+    Default: 10.192.20.0/24
+
+  PrivateSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone
+    Type: String
+    Default: 10.192.21.0/24
+
+Mappings:
+  RegionMap:
+    us-east-1:
+      AZs:
+        - us-east-1a
+        - us-east-1b
+        - us-east-1c
+    us-west-2:
+      AZs:
+        - us-west-2a
+        - us-west-2b
+        - us-west-2c
+
+  Tags:
+    php-3-tier:
+      project: php-3-tier
+      environment: dev
+      Name: 
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: project
+          Value: !FindInMap [Tags, php-3-tier, project]
+        - Key: environment
+          Value: !FindInMap [Tags, php-3-tier, environment]
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: project
+          Value: !FindInMap [Tags, php-3-tier, project]
+        - Key: environment
+          Value: !FindInMap [Tags, php-3-tier, environment]
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select
+        - 0
+        - !FindInMap
+          - RegionMap
+          - !Ref AWS::Region
+          - AZs
+      CidrBlock: !Ref PublicSubnet1CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: project
+          Value: !FindInMap [Tags, php-3-tier, project]
+        - Key: environment
+          Value: !FindInMap [Tags, php-3-tier, environment]
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select
+        - 1
+        - !FindInMap
+          - RegionMap
+          - !Ref AWS::Region
+          - AZs
+      CidrBlock: !Ref PublicSubnet2CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: project
+          Value: !FindInMap [Tags, php-3-tier, project]
+        - Key: environment
+          Value: !FindInMap [Tags, php-3-tier, environment]
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select
+        - 0
+        - !FindInMap
+          - RegionMap
+          - !Ref AWS::Region
+          - AZs
+      CidrBlock: !Ref PrivateSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: project
+          Value: !FindInMap [Tags, php-3-tier, project]
+        - Key: environment
+          Value: !FindInMap [Tags, php-3-tier, environment]
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select
+        - 1
+        - !FindInMap
+          - RegionMap
+          - !Ref AWS::Region
+          - AZs
+      CidrBlock: !Ref PrivateSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: project
+          Value: !FindInMap [Tags, php-3-tier, project]
+        - Key: environment
+          Value: !FindInMap [Tags, php-3-tier, environment]
+
+  # Public Route Table and Associations
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: project
+          Value: !FindInMap [Tags, php-3-tier, project]
+        - Key: environment
+          Value: !FindInMap [Tags, php-3-tier, environment]
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
+
+  # Private Route Tables and Associations
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: project
+          Value: !FindInMap [Tags, php-3-tier, project]
+        - Key: environment
+          Value: !FindInMap [Tags, php-3-tier, environment]
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      SubnetId: !Ref PrivateSubnet1
+
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      SubnetId: !Ref PrivateSubnet2
+
+  NoIngressSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: no-ingress-sg
+      GroupDescription: Security group with no ingress rule
+      VpcId: !Ref VPC
+
+Outputs:
+  VPCID:
+    Description: The VPC ID
+    Value: !Ref VPC
+
+  PublicSubnet1ID:
+    Description: The ID of the first public subnet
+    Value: !Ref PublicSubnet1
+
+  PublicSubnet2ID:
+    Description: The ID of the second public subnet
+    Value: !Ref PublicSubnet2
+
+  PrivateSubnet1ID:
+    Description: The ID of the first private subnet
+    Value: !Ref PrivateSubnet1
+
+  PrivateSubnet2ID:
+    Description: The ID of the second private subnet
+    Value: !Ref PrivateSubnet2
+
+  PublicRouteTableID:
+    Description: The ID of the public route table
+    Value: !Ref PublicRouteTable
+
+  PrivateRouteTable1ID:
+    Description: The ID of the first private route table
+    Value: !Ref PrivateRouteTable1
+
+  PrivateRouteTable2ID:
+    Description: The ID of the second private route table
+    Value: !Ref PrivateRouteTable2
+
+  InternetGatewayID:
+    Description: The ID of the internet gateway
+    Value: !Ref InternetGateway

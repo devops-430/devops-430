@@ -1,0 +1,141 @@
+aws cloudformation create-stack \
+  --stack-name php-3tier-vpc-stack \
+  --template-url https://my-cloudformation-templates-devops430.s3.amazonaws.com/vpc-template.yaml \
+  --parameters ParameterKey=VpcCIDR,ParameterValue=10.192.0.0/16 \
+               ParameterKey=PublicSubnetCIDR,ParameterValue=10.192.10.0/24 \
+               ParameterKey=PrivateSubnetCIDR,ParameterValue=10.192.20.0/24 \
+  --capabilities CAPABILITY_NAMED_IAM
+
+
+aws cloudformation create-stack \
+  --stack-name MyVPCStack \
+  --template-body file://path/to/your/template.yaml \
+  --parameters ParameterKey=VpcCIDR,ParameterValue=10.192.0.0/16 \
+               ParameterKey=PublicSubnet1CIDR,ParameterValue=10.192.10.0/24 \
+               ParameterKey=PublicSubnet2CIDR,ParameterValue=10.192.11.0/24 \
+               ParameterKey=PrivateSubnet1CIDR,ParameterValue=10.192.20.0/24 \
+               ParameterKey=PrivateSubnet2CIDR,ParameterValue=10.192.21.0/24 \
+  --capabilities CAPABILITY_IAM
+
+
+aws cloudformation create-stack \
+  --stack-name php-3tier-vpc-stack \
+  --template-url https://my-cloudformation-templates-devops430.s3.amazonaws.com/vpc-template.yaml \
+  --parameters ParameterKey=VpcCIDR,ParameterValue=10.192.0.0/16 \
+               ParameterKey=PublicSubnet1CIDR,ParameterValue=10.192.10.0/24 \
+               ParameterKey=PublicSubnet2CIDR,ParameterValue=10.192.11.0/24 \
+               ParameterKey=PrivateSubnet1CIDR,ParameterValue=10.192.20.0/24 \
+               ParameterKey=PrivateSubnet2CIDR,ParameterValue=10.192.21.0/24 \
+  --capabilities CAPABILITY_IAM \
+  --profile acloud-temp
+
+
+logpoint@logpoints-mbp aws-clf % aws cloudformation create-stack \
+  --stack-name php-3tier-vpc-stack \
+  --template-url https://my-cloudformation-templates-devops430.s3.amazonaws.com/vpc-template.yaml \
+  --parameters ParameterKey=VpcCIDR,ParameterValue=10.192.0.0/16 \
+               ParameterKey=PublicSubnet1CIDR,ParameterValue=10.192.10.0/24 \
+               ParameterKey=PublicSubnet2CIDR,ParameterValue=10.192.11.0/24 \
+               ParameterKey=PrivateSubnet1CIDR,ParameterValue=10.192.20.0/24 \
+               ParameterKey=PrivateSubnet2CIDR,ParameterValue=10.192.21.0/24 \
+  --capabilities CAPABILITY_IAM \
+  --profile acloud-temp
+{
+    "StackId": "arn:aws:cloudformation:us-east-1:471112992927:stack/php-3tier-vpc-stack/1b559d00-ef5c-11ef-80b3-0affd70a471d"
+}
+
+
+
+aws cloudformation describe-stacks --query "Stacks[].[StackName, StackStatus]" --profile acloud-temp
+[
+    [
+        "php-3tier-vpc-stack",
+        "CREATE_COMPLETE"
+    ],
+    [
+        "cfst-1449-c813b2362ed562b29e0a0d9ac3f48a027f01050aa12010cfd02e641b83dde9a8",
+        "CREATE_COMPLETE"
+    ]
+]
+
+## Change Set
+
+aws cloudformation create-change-set \
+  --stack-name php-3tier-vpc-stack \
+  --template-url https://my-cloudformation-templates-devops430.s3.amazonaws.com/vpc-template.yaml \
+  --parameters ParameterKey=VpcCIDR,ParameterValue=10.192.0.0/16 \
+               ParameterKey=PublicSubnet1CIDR,ParameterValue=10.192.10.0/24 \
+               ParameterKey=PublicSubnet2CIDR,ParameterValue=10.192.11.0/24 \
+               ParameterKey=PrivateSubnet1CIDR,ParameterValue=10.192.20.0/24 \
+               ParameterKey=PrivateSubnet2CIDR,ParameterValue=10.192.21.0/24 \
+  --capabilities CAPABILITY_IAM \
+  --profile acloud-temp \
+  --change-set-name php-3tier-vpc-changeset
+
+
+logpoint@logpoints-mbp aws-clf % aws cloudformation create-change-set \
+  --stack-name php-3tier-vpc-stack \
+  --template-url https://my-cloudformation-templates-devops430.s3.amazonaws.com/vpc-template.yaml \
+  --parameters ParameterKey=VpcCIDR,ParameterValue=10.192.0.0/16 \
+               ParameterKey=PublicSubnet1CIDR,ParameterValue=10.192.10.0/24 \
+               ParameterKey=PublicSubnet2CIDR,ParameterValue=10.192.11.0/24 \
+               ParameterKey=PrivateSubnet1CIDR,ParameterValue=10.192.20.0/24 \
+               ParameterKey=PrivateSubnet2CIDR,ParameterValue=10.192.21.0/24 \
+  --capabilities CAPABILITY_IAM \
+  --profile acloud-temp \
+  --change-set-name php-3tier-vpc-changeset
+{
+    "Id": "arn:aws:cloudformation:us-east-1:471112992927:changeSet/php-3tier-vpc-changeset/636ebb55-858e-47a6-a654-d943e2b6e7c0",
+    "StackId": "arn:aws:cloudformation:us-east-1:471112992927:stack/php-3tier-vpc-stack/1b559d00-ef5c-11ef-80b3-0affd70a471d"
+}
+logpoint@logpoints-mbp aws-clf %
+
+
+### To check the stack status 
+
+aws cloudformation describe-stacks \
+  --stack-name php-3tier-vpc-stack \
+  --profile acloud-temp
+
+
+### To check the output
+
+aws cloudformation describe-stacks \
+  --stack-name php-3tier-vpc-stack \
+  --profile acloud-temp \
+  --query "Stacks[0].Outputs"
+
+
+### To list vpcs 
+
+aws ec2 describe-vpcs --profile acloud-temp
+
+
+
+logpoint@logpoints-mbp aws-clf % aws s3 cp vpc_with_tag.yaml s3://my-cloudformation-templates-devops430/vpc-template.yaml --profile acloud-temp
+upload: ./vpc_with_tag.yaml to s3://my-cloudformation-templates-devops430/vpc-template.yaml
+logpoint@logpoints-mbp aws-clf % aws cloudformation create-change-set \
+  --stack-name php-3tier-vpc-stack \
+  --template-url https://my-cloudformation-templates-devops430.s3.amazonaws.com/vpc-template.yaml \
+  --parameters ParameterKey=VpcCIDR,ParameterValue=10.192.0.0/16 \
+               ParameterKey=PublicSubnet1CIDR,ParameterValue=10.192.10.0/24 \
+               ParameterKey=PublicSubnet2CIDR,ParameterValue=10.192.11.0/24 \
+               ParameterKey=PrivateSubnet1CIDR,ParameterValue=10.192.20.0/24 \
+               ParameterKey=PrivateSubnet2CIDR,ParameterValue=10.192.21.0/24 \
+  --capabilities CAPABILITY_IAM \
+  --profile acloud-temp \
+  --change-set-name php-3tier-vpc-changeset-tags
+{
+    "Id": "arn:aws:cloudformation:us-east-1:471112992927:changeSet/php-3tier-vpc-changeset-tags/29598345-9e48-4fab-8a33-dc292b1a7181",
+    "StackId": "arn:aws:cloudformation:us-east-1:471112992927:stack/php-3tier-vpc-stack/1b559d00-ef5c-11ef-80b3-0affd70a471d"
+}
+
+### Describe changeset 
+aws cloudformation describe-change-set --change-set-name php-3tier-vpc-changeset-tags --stack-name php-3tier-vpc-stack --profile acloud-temp
+
+
+
+
+
+
+
