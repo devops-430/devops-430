@@ -30,7 +30,7 @@ aws cloudformation create-stack \
   --profile acloud-temp
 
 
-logpoint@logpoints-mbp aws-clf % aws cloudformation create-stack \
+ % aws cloudformation create-stack \
   --stack-name php-3tier-vpc-stack \
   --template-url https://my-cloudformation-templates-devops430.s3.amazonaws.com/vpc-template.yaml \
   --parameters ParameterKey=VpcCIDR,ParameterValue=10.192.0.0/16 \
@@ -73,7 +73,7 @@ aws cloudformation create-change-set \
   --change-set-name php-3tier-vpc-changeset
 
 
-logpoint@logpoints-mbp aws-clf % aws cloudformation create-change-set \
+ % aws cloudformation create-change-set \
   --stack-name php-3tier-vpc-stack \
   --template-url https://my-cloudformation-templates-devops430.s3.amazonaws.com/vpc-template.yaml \
   --parameters ParameterKey=VpcCIDR,ParameterValue=10.192.0.0/16 \
@@ -88,7 +88,8 @@ logpoint@logpoints-mbp aws-clf % aws cloudformation create-change-set \
     "Id": "arn:aws:cloudformation:us-east-1:471112992927:changeSet/php-3tier-vpc-changeset/636ebb55-858e-47a6-a654-d943e2b6e7c0",
     "StackId": "arn:aws:cloudformation:us-east-1:471112992927:stack/php-3tier-vpc-stack/1b559d00-ef5c-11ef-80b3-0affd70a471d"
 }
-logpoint@logpoints-mbp aws-clf %
+
+%
 
 
 ### To check the stack status 
@@ -112,9 +113,9 @@ aws ec2 describe-vpcs --profile acloud-temp
 
 
 
-logpoint@logpoints-mbp aws-clf % aws s3 cp vpc_with_tag.yaml s3://my-cloudformation-templates-devops430/vpc-template.yaml --profile acloud-temp
+ % aws s3 cp vpc_with_tag.yaml s3://my-cloudformation-templates-devops430/vpc-template.yaml --profile acloud-temp
 upload: ./vpc_with_tag.yaml to s3://my-cloudformation-templates-devops430/vpc-template.yaml
-logpoint@logpoints-mbp aws-clf % aws cloudformation create-change-set \
+ % aws cloudformation create-change-set \
   --stack-name php-3tier-vpc-stack \
   --template-url https://my-cloudformation-templates-devops430.s3.amazonaws.com/vpc-template.yaml \
   --parameters ParameterKey=VpcCIDR,ParameterValue=10.192.0.0/16 \
