@@ -1,0 +1,90 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Sample CloudFormation template with YAML - RDS Definition
+
+Parameters:
+  StackName:
+    Description: Target VPC Stack Name
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: ^[a-zA-Z][-a-zA-Z0-9]*$
+    Default: sample-cloudformation-vpc-1
+
+  RdsUser:
+    Description: Database Master User Name
+    Type: String
+    Default: postgresql
+
+  RdsPassword:
+    Description: Database Master User Password
+    Type: String
+    NoEcho: true
+    Default: postgresql
+
+  AllocatedStorage:
+    Description: Database storage size (GB)
+    Type: Number
+    Default: 20
+    MinValue: 10
+    MaxValue: 1000
+
+Resources:
+  SampleCloudFormationRDSInstance:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Retain
+    Properties:
+      DBInstanceIdentifier: sample-cloudformation-postgresql
+      DBName: SampleCloudFormationPostgreSQL
+      Engine: postgres
+      EngineVersion: "15.7"
+      MultiAZ: false
+      MasterUsername: !Ref RdsUser
+      MasterUserPassword: !Ref RdsPassword
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: !Ref AllocatedStorage
+      DBSubnetGroupName: !Ref SampleCloudFormationDBSubnetGroup
+      MonitoringInterval: 10
+      MonitoringRoleArn: !GetAtt SampleCloudFormationDBMonitorRole.Arn
+      VPCSecurityGroups:
+        - Fn::ImportValue: !Sub ${StackName}-MySQLSecurityGroupID
+      BackupRetentionPeriod: 7
+      StorageType: gp2
+      PubliclyAccessible: false
+
+  SampleCloudFormationDBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: DB Subnet Group for Private Subnet
+      SubnetIds:
+        - Fn::ImportValue: !Sub ${StackName}-PrivateSubnet1
+        - Fn::ImportValue: !Sub ${StackName}-PrivateSubnet2
+
+  SampleCloudFormationDBMonitorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - monitoring.rds.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+Outputs:
+  SampleCloudFormationRDSInstance:
+    Description: RDS Instance
+    Value: !Ref SampleCloudFormationRDSInstance
+    Export:
+      Name: !Sub ${StackName}-RDS
+
+  SampleCloudFormationRDSInstanceEndPoint:
+    Description: RDS Endpoint
+    Value: !GetAtt SampleCloudFormationRDSInstance.Endpoint.Address
+    Export:
+      Name: !Sub ${StackName}-RDSEndpoint

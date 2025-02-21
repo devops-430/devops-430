@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: EC2 instance in the public subnet with dynamic VPC and subnet imports
+
+Parameters:
+  KeyPairName:
+    Description: Name of an existing EC2 KeyPair
+    Type: AWS::EC2::KeyPair::KeyName
+
+  S3BucketName:
+    Description: The name of the S3 bucket where the user-data script is stored
+    Type: String
+
+  UserDataFileName:
+    Description: The name of the user-data file in the S3 bucket
+    Type: String
+
+Resources:
+  # Security Group for EC2 Instance
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH and HTTP
+      VpcId: !ImportValue !Sub "${AWS::StackName}-VPC"  # Dynamic import of VPC ID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  # EC2 Instance in the public subnet
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      KeyName: !Ref KeyPairName
+      ImageId: ami-0c55b159cbfafe1f0  # Update this with the correct AMI for your region
+      SubnetId: !ImportValue !Sub "${AWS::StackName}-PublicSubnet1"  # Dynamic import of Public Subnet
+      SecurityGroupIds:
+        - !Ref EC2SecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          aws s3 cp s3://${S3BucketName}/${UserDataFileName} /tmp/user-data.sh
+          bash /tmp/user-data.sh
+      Tags:
+        - Key: Name
+          Value: php-3-tier-webserver
+
+Outputs:
+  EC2PublicIP:
+    Description: Public IP of the EC2 instance
+    Value: !GetAtt EC2Instance.PublicIp
