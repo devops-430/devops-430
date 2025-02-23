@@ -4,7 +4,7 @@
 
 1. Create Bucket
 ```bash
-aws s3 mb s3://my-cloudformation-templates-devops430 --region us-east-1
+aws s3 mb s3://my-cloudformation-templates-devops430 --region us-east-1 --profile lab
 ```
 
 2. Copy file to bucket
