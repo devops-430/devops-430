@@ -1,9 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
-  KeyPairName:
-    Description: Name of an existing EC2 KeyPair
-    Type: AWS::EC2::KeyPair::KeyName
-
   S3BucketName:
     Description: The name of the S3 bucket where the user-data script is stored
     Type: String
@@ -11,6 +7,10 @@ Parameters:
   UserDataFileName:
     Description: The name of the user-data file in the S3 bucket
     Type: String
+  KeyPairName:
+    Description: Name of the EC2 key pair
+    Type: String
+    Default: my-key-pair
 Resources:
   KeyPairStack:
     Type: AWS::CloudFormation::Stack
@@ -29,18 +29,21 @@ Resources:
       TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/ec2-instance.yaml"
       Parameters:
         VpcId: !GetAtt NetworkStack.Outputs.VPCID
-        PublicSubnetId: !GetAtt NetworkStack.Outputs.PublicSubnet1ID        
-#   DatabaseStack:
-#     Type: AWS::CloudFormation::Stack
-#     Properties:
-#       TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/rds.yaml"
-#       Parameters:
-#         VpcId: !GetAtt NetworkStack.Outputs.VPCId
-#         DBSubnetIds: !GetAtt NetworkStack.Outputs.DBSubnetIds
-#   FrontendStorageStack:
-#     Type: AWS::CloudFormation::Stack
-#     Properties:
-#       TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/s3-template.yaml"
+        PublicSubnetId: !GetAtt NetworkStack.Outputs.PublicSubnet1ID
+        KeyPairName: !GetAtt KeyPairStack.Outputs.KeyPairNameOutput  
+        S3BucketName: !Ref S3BucketName
+        UserDataFileName: !Ref UserDataFileName     
+  DatabaseStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/rds.yaml"
+      # Parameters:
+      #   VpcId: !GetAtt NetworkStack.Outputs.VPCID
+      #   DBSubnetIds: !GetAtt NetworkStack.Outputs.DBSubnetIds
+  # FrontendStorageStack:
+  #   Type: AWS::CloudFormation::Stack
+  #   Properties:
+  #     TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/s3-template.yaml"
 Outputs:
   VPCStackOutput:
     Description: The VPC stack output

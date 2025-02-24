@@ -1,18 +1,22 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: EC2 instance in the public subnet with dynamic VPC and subnet imports
-
 Parameters:
+  VpcId:
+    Type: String
+    Description: The VPC ID where the EC2 instance will be deployed.
+  PublicSubnetId:
+    Type: String
+    Description: The Public Subnet ID where the EC2 instance will be deployed.
   KeyPairName:
-    Description: Name of an existing EC2 KeyPair
-    Type: AWS::EC2::KeyPair::KeyName
-
-  S3BucketName:
-    Description: The name of the S3 bucket where the user-data script is stored
     Type: String
-
+    Description: Name of the EC2 key pair to use.
   UserDataFileName:
-    Description: The name of the user-data file in the S3 bucket
     Type: String
+    Description: The name of the user-data script file in the S3 bucket.
+  S3BucketName:
+    Type: String
+    Description: The name of the S3 bucket where the user-data script is stored.
+
 
 Resources:
   # Security Group for EC2 Instance
@@ -20,7 +24,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Allow SSH and HTTP
-      VpcId: !ImportValue "${AWS::StackName}-VPC"  # Dynamic import of VPC ID
+      VpcId: !Ref VpcId 
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
@@ -37,8 +41,8 @@ Resources:
     Properties:
       InstanceType: t2.micro
       KeyName: !Ref KeyPairName
-      ImageId: ami-0c55b159cbfafe1f0  # Update this with the correct AMI for your region
-      SubnetId: !ImportValue "${AWS::StackName}-PublicSubnet1"  # Dynamic import of Public Subnet
+      ImageId: ami-04b4f1a9cf54c11d0  # Update this with the correct AMI for your region
+      SubnetId: !Ref PublicSubnetId
       SecurityGroupIds:
         - !Ref EC2SecurityGroup
       UserData:

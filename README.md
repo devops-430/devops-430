@@ -11,6 +11,10 @@ aws s3 mb s3://my-cloudformation-templates-devops430 --region us-east-1 --profil
 ```bash
  aws s3 cp cloudformation-template/ s3://my-cloudformation-templates-devops430/ --recursive --profile lab
  ```
+ - copy `user-data.sh` script
+ ```bash
+ aws s3 cp scripts/user-data.sh s3://my-cloudformation-templates-devops430/ --profile lab
+ ```
 
 3. Create the CloudFormation stack with the name `php-3-tier`:
 ```bash
@@ -93,7 +97,66 @@ aws cloudformation create-change-set \
   --parameters \
     ParameterKey=KeyPairName,ParameterValue=my-key-pair \
     ParameterKey=S3BucketName,ParameterValue=my-cloudformation-templates-devops430 \
-    ParameterKey=UserDataFileName,ParameterValue=useradd.sh
+    ParameterKey=UserDataFileName,ParameterValue=user-data.sh
+```
+11. Next now enable Database and apply as changeset
+
+```bash
+aws cloudformation create-change-set \
+  --stack-name php-3-tier \
+  --change-set-name add-database-stack \
+  --template-url https://s3.amazonaws.com/my-cloudformation-templates-devops430/php-3-tier.yaml \
+  --parameters ParameterKey=S3BucketName,ParameterValue=my-cloudformation-templates-devops430 \
+               ParameterKey=UserDataFileName,ParameterValue=user-data.sh \
+               ParameterKey=KeyPairName,ParameterValue=my-key-pair \
+  --profile lab
+
+```
+12. Check the Change Set
+```bash
+aws cloudformation describe-change-set \
+  --stack-name php-3-tier \
+  --change-set-name add-database-stack \
+  --profile lab
+```
+13. Execute the Change Set
+```bash
+aws cloudformation execute-change-set \
+  --stack-name php-3-tier \
+  --change-set-name add-database-stack \
+  --profile lab
+
+```
+14. Monitor the Stack Update
+```bash
+aws cloudformation describe-stacks \
+  --stack-name php-3-tier \
+  --profile lab
+```
+15. Check event for more detail
+```bash
+aws cloudformation describe-stack-events --stack-name php-3-tier --region us-east-1 --profile lab
 ```
 
+16. Check the existing change set
+```bash
+aws cloudformation describe-change-set --change-set-name add-database-stack --stack-name php-3-tier --profile lab
 
+```
+
+17. Delete the existing change set
+```bash
+aws cloudformation delete-change-set --change-set-name add-database-stack --stack-name php-3-tier --profile lab
+
+```
+18. Create the change set again
+```bash
+aws cloudformation create-change-set \
+  --stack-name php-3-tier \
+  --change-set-name add-database-stack \
+  --template-url https://s3.amazonaws.com/my-cloudformation-templates-devops430/php-3-tier.yaml \
+  --parameters ParameterKey=S3BucketName,ParameterValue=my-cloudformation-templates-devops430 \
+               ParameterKey=UserDataFileName,ParameterValue=user-data.sh \
+               ParameterKey=KeyPairName,ParameterValue=my-key-pair \
+  --profile lab
+```
