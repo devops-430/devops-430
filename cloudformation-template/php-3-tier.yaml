@@ -1,49 +1,63 @@
 AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  KeyPairName:
+    Description: Name of an existing EC2 KeyPair
+    Type: AWS::EC2::KeyPair::KeyName
+
+  S3BucketName:
+    Description: The name of the S3 bucket where the user-data script is stored
+    Type: String
+
+  UserDataFileName:
+    Description: The name of the user-data file in the S3 bucket
+    Type: String
 Resources:
+  KeyPairStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/keypair.yaml"
+      Parameters:
+        KeyPairName: !Ref KeyPairName
+        
   NetworkStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/vpc-template.yaml"
-
-  ComputeStack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/rds-template.yaml"
-  ComputeStack:
+      TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/vpc.yaml"
+  BackendStack:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/ec2-instance.yaml"
       Parameters:
-        VpcId: !GetAtt NetworkStack.Outputs.VPCId
-        PublicSubnetId: !GetAtt NetworkStack.Outputs.PublicSubnetId        
-  DatabaseStack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/rds.yaml"
-      Parameters:
-        VpcId: !GetAtt NetworkStack.Outputs.VPCId
-        DBSubnetIds: !GetAtt NetworkStack.Outputs.DBSubnetIds
-  FrontendStorageStack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/s3-template.yaml"
+        VpcId: !GetAtt NetworkStack.Outputs.VPCID
+        PublicSubnetId: !GetAtt NetworkStack.Outputs.PublicSubnet1ID        
+#   DatabaseStack:
+#     Type: AWS::CloudFormation::Stack
+#     Properties:
+#       TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/rds.yaml"
+#       Parameters:
+#         VpcId: !GetAtt NetworkStack.Outputs.VPCId
+#         DBSubnetIds: !GetAtt NetworkStack.Outputs.DBSubnetIds
+#   FrontendStorageStack:
+#     Type: AWS::CloudFormation::Stack
+#     Properties:
+#       TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/s3-template.yaml"
 Outputs:
   VPCStackOutput:
     Description: The VPC stack output
-    Value: !GetAtt VPCStack.Outputs.VPCID
+    Value: !GetAtt NetworkStack.Outputs.VPCID
 
-  S3StackOutput:
-    Description: The S3 stack output
-    Value: !GetAtt S3Stack.Outputs.BucketName
+  # S3StackOutput:
+  #   Description: The S3 stack output
+  #   Value: !GetAtt FrontendStorageStack.Outputs.BucketName
 
-  RDSStackOutput:
-    Description: The RDS stack output
-    Value: !GetAtt RDSStack.Outputs.DBInstance
-
-  Php3TierStackOutput:
-    Description: The PHP 3-tier stack output
-    Value: !GetAtt Php3TierStack.Outputs.WebServer
+  # RDSStackOutput:
+  #   Description: The RDS stack output
+  #   Value: !GetAtt DatabaseStack.Outputs.DBInstance
 
   EC2InstanceStackOutput:
     Description: The EC2 Instance stack output
-    Value: !GetAtt EC2InstanceStack.Outputs.EC2PublicIP
+    Value: !GetAtt BackendStack.Outputs.EC2PublicIP
+
+  # RDSDatabaseEndpoint:
+  #   Description: The RDS database endpoint
+  #   Value: !GetAtt DatabaseStack.Outputs.SampleCloudFormationRDSInstanceEndPoint

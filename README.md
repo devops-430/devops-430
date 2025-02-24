@@ -22,4 +22,25 @@ aws cloudformation create-stack --stack-name php-3-tier --template-url https://m
 aws cloudformation describe-stacks --stack-name php-3-tier --region us-east-1 --profile lab
 
 ```
+5. Check events
+```bash
+aws cloudformation describe-stack-events --stack-name php-3-tier --region us-east-1 --profile lab
+```
+
+6. Update stack
+```bash
+aws cloudformation update-stack \
+    --stack-name php-3-tier \
+    --template-url https://my-cloudformation-templates-devops430.s3.amazonaws.com/php-3-tier.yaml \
+    --region us-east-1 \
+    --profile lab
+
+```
+
+7. Delete existing stack
+```bash
+aws cloudformation delete-stack --stack-name php-3-tier --region us-east-1 --profile lab
+
+```
+
 
