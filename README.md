@@ -160,3 +160,50 @@ aws cloudformation create-change-set \
                ParameterKey=KeyPairName,ParameterValue=my-key-pair \
   --profile lab
 ```
+
+
+### Issues
+1. Some resources might fail due to inadequate permissions.
+
+```bash
+ {
+            "StackId": "arn:aws:cloudformation:us-east-1:471112726268:stack/php-3-tier/0f8a8280-f2b6-11ef-ab94-0e947989e88d",
+            "EventId": "DatabaseStack-CREATE_FAILED-2025-02-24T13:52:13.301Z",
+            "StackName": "php-3-tier",
+            "LogicalResourceId": "DatabaseStack",
+            "PhysicalResourceId": "",
+            "ResourceType": "AWS::CloudFormation::Stack",
+            "Timestamp": "2025-02-24T13:52:13.301000+00:00",
+            "ResourceStatus": "CREATE_FAILED",
+            "ResourceStatusReason": "Requires capabilities : [CAPABILITY_IAM]",
+            "ResourceProperties": "{\"TemplateURL\":\"https://s3.amazonaws.com/my-cloudformation-templates-devops430/rds.yaml\"}"
+        },
+```
+
+- Resolve:
+
+```bash
+ aws cloudformation create-stack \
+  --stack-name php-3-tier \
+  --template-url https://my-cloudformation-templates-devops430.s3.amazonaws.com/php-3-tier.yaml \
+  --region us-east-1 \
+  --profile lab \
+  --parameters \
+    ParameterKey=KeyPairName,ParameterValue=my-key-pair \
+    ParameterKey=S3BucketName,ParameterValue=my-cloudformation-templates-devops430 \
+    ParameterKey=UserDataFileName,ParameterValue=user-data.sh \
+  --capabilities CAPABILITY_IAM
+```
+or update
+```bash
+aws cloudformation update-stack \
+  --stack-name php-3-tier \
+  --template-url https://my-cloudformation-templates-devops430.s3.amazonaws.com/php-3-tier.yaml \
+  --region us-east-1 \
+  --profile lab \
+  --parameters \
+    ParameterKey=KeyPairName,ParameterValue=my-key-pair \
+    ParameterKey=S3BucketName,ParameterValue=my-cloudformation-templates-devops430 \
+    ParameterKey=UserDataFileName,ParameterValue=user-data.sh \
+  --capabilities CAPABILITY_IAM
+```

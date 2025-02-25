@@ -25,6 +25,9 @@ Resources:
       TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/vpc.yaml"
   BackendStack:
     Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - NetworkStack
+      - KeyPairStack
     Properties:
       TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/ec2-instance.yaml"
       Parameters:
@@ -35,9 +38,12 @@ Resources:
         UserDataFileName: !Ref UserDataFileName     
   DatabaseStack:
     Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - NetworkStack
     Properties:
       TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/rds.yaml"
-      # Parameters:
+      Parameters:
+        StackName: !Ref StackName  # Pass the StackName parameter to RDS
       #   VpcId: !GetAtt NetworkStack.Outputs.VPCID
       #   DBSubnetIds: !GetAtt NetworkStack.Outputs.DBSubnetIds
   # FrontendStorageStack:
