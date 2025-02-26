@@ -172,6 +172,22 @@ chmod 400 my-key-pair.pem
 aws ec2 describe-key-pairs --query "KeyPairs[*].KeyName" --profile lab
 ```
 
+21. If you have already a private key
+  - Generate public key
+```bash
+ ssh-keygen -y -f ./my-key-pair.pem > my-key-pair.pub
+ ```
+  - Import the Public Key into AWS
+  ```bash
+  aws ec2 import-key-pair \
+    --key-name my-key-pair \
+    --public-key-material fileb://my-key-pair.pub \
+    --profile lab
+  ```
+  - To check if the key was successfully imported:
+  ```bash
+  aws ec2 describe-key-pairs --key-name my-key-pair --profile lab
+  ```
 
 
 ### Issues
