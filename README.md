@@ -1,5 +1,14 @@
 # devops-430
 
+## Before Begin
+### Configure AWS Credential
+### Upload templates to bucket
+### Create Stack
+### Monitor Stack Creation
+### Delete Stack
+### Create Changeset
+### Issues
+
 ## Steps to deploy infrastructure through cloudformation template
 
 1. Create Bucket
@@ -188,6 +197,83 @@ aws ec2 describe-key-pairs --query "KeyPairs[*].KeyName" --profile lab
   ```bash
   aws ec2 describe-key-pairs --key-name my-key-pair --profile lab
   ```
+22. Create condition to enable/disable cloudformation stack
+```bash
+aws cloudformation create-stack \
+  --stack-name php-3-tier \
+  --template-url https://my-cloudformation-templates-devops430-a.s3.amazonaws.com/php-3-tier.yaml \
+  --region us-east-1 \
+  --profile lab \
+  --parameters \
+    ParameterKey=KeyPairName,ParameterValue=my-key-pair \
+    ParameterKey=S3BucketName,ParameterValue=my-cloudformation-templates-devops430-a \
+    ParameterKey=UserDataFileName,ParameterValue=user-data.sh \
+    ParameterKey=EnableFrontendStorageStack,ParameterValue=false \
+    ParameterKey=EnableDatabaseStack,ParameterValue=false \
+  --capabilities CAPABILITY_IAM
+```
+
+23. Get output
+```bash
+aws cloudformation describe-stacks \
+  --stack-name php-3-tier \
+  --query "Stacks[0].Outputs" \
+  --region us-east-1 \
+  --profile lab
+```
+24. Create individual resource
+```bash
+aws cloudformation create-stack \
+  --stack-name s3-storage-stack \
+  --template-url https://my-cloudformation-templates-devops430.s3.amazonaws.com/s3-template.yaml \
+  --region us-east-1 \
+  --profile lab \
+  --capabilities CAPABILITY_IAM
+```
+
+25. Check event
+```bash
+aws cloudformation describe-stack-events --stack-name s3-storage-stack --region us-east-1 --profile lab
+```
+
+26. Check output
+```bash
+aws cloudformation describe-stacks --stack-name s3-storage-stack --profile lab --query "Stacks[0].Outputs"
+```
+
+27. List All Subnets in the VPC:
+```bash
+aws ec2 describe-subnets \
+  --filters Name=vpc-id,Values=vpc-0e849cc0b26595922 \
+  --query 'Subnets[*].{ID:SubnetId,Name:Tags[?Key==`Name`].Value | [0],CIDR:CidrBlock}' \
+  --profile lab \
+  --output table
+```
+
+28. List All Security Groups in the VPC:
+```bash
+aws ec2 describe-security-groups \
+  --filters Name=vpc-id,Values=vpc-0e849cc0b26595922 \
+  --query 'SecurityGroups[*].{ID:GroupId,Name:GroupName,Description:Description}' \
+  --profile lab \
+  --output table
+```
+
+29. Create RDS
+```bash
+ --stack-name my-rds-stack \
+  --template-body file://cloudformation-template/rds.yaml \
+  --parameters \
+    ParameterKey=VpcId,ParameterValue=vpc-0d6a17f75dff70496 \
+    ParameterKey=PrivateSubnet1,ParameterValue=subnet-0ecfc97272eb65aac \
+    ParameterKey=PrivateSubnet2,ParameterValue=subnet-04a6bc06b8e20136e \
+    ParameterKey=SecurityGroupId,ParameterValue=sg-0f741b502166acc5e \
+    ParameterKey=RdsUser,ParameterValue=postgresql \
+    ParameterKey=RdsPassword,ParameterValue=yourpassword \
+    ParameterKey=AllocatedStorage,ParameterValue=20 \
+  --profile lab \
+  --capabilities CAPABILITY_IAM
+```
 
 
 ### Issues
