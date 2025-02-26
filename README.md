@@ -161,6 +161,18 @@ aws cloudformation create-change-set \
   --profile lab
 ```
 
+19. Create ssh keypair
+```bash
+aws ec2 create-key-pair --key-name my-key-pair --query "KeyMaterial" --profile lab --output text > my-key-pair.pem
+chmod 400 my-key-pair.pem
+```
+
+20. List aws keypair
+```bash
+aws ec2 describe-key-pairs --query "KeyPairs[*].KeyName" --profile lab
+```
+
+
 
 ### Issues
 1. Some resources might fail due to inadequate permissions.
@@ -207,3 +219,39 @@ aws cloudformation update-stack \
     ParameterKey=UserDataFileName,ParameterValue=user-data.sh \
   --capabilities CAPABILITY_IAM
 ```
+
+- Resource delete issue
+```bash
+{
+            "StackId": "arn:aws:cloudformation:us-east-1:211125585429:stack/php-3-tier/17d32450-f33e-11ef-acae-0e7e312e04ab",
+            "EventId": "DatabaseStack-DELETE_FAILED-2025-02-25T06:27:56.090Z",
+            "StackName": "php-3-tier",
+            "LogicalResourceId": "DatabaseStack",
+            "PhysicalResourceId": "arn:aws:cloudformation:us-east-1:211125585429:stack/php-3-tier-DatabaseStack-39OGMOYHYXAD/2e781bc0-f33e-11ef-9415-0affc9377d4d",
+            "ResourceType": "AWS::CloudFormation::Stack",
+            "Timestamp": "2025-02-25T06:27:56.090000+00:00",
+            "ResourceStatus": "DELETE_FAILED",
+            "ResourceStatusReason": "Embedded stack arn:aws:cloudformation:us-east-1:211125585429:stack/php-3-tier-DatabaseStack-39OGMOYHYXAD/2e781bc0-f33e-11ef-9415-0affc9377d4d was not successfully deleted: The following resource(s) failed to delete: [SampleCloudFormationDBSubnetGroup]. ",
+            "ResourceProperties": "{\"TemplateURL\":\"https://s3.amazonaws.com/my-cloudformation-templates-devops430/rds.yaml\",\"Parameters\":{\"PrivateSubnet1\":\"subnet-01e82ced1ed78320b\",\"PrivateSubnet2\":\"subnet-034d3d119bd85f618\",\"VpcId\":\"vpc-0a7e3ef930dc46f39\",\"SecurityGroupId\":\"sg-07f0d3263217fc1eb\"}}"
+        },
+```
+1. Check active instance
+```bash
+aws rds describe-db-instances --query "DBInstances[*].DBInstanceIdentifier" --profile lab
+```
+
+2. Delete instance
+```bash
+aws rds delete-db-instance --db-instance-identifier sample-cloudformation-postgresql --skip-final-snapshot --profile lab
+```
+
+3. Wait for the deletion to complete
+```bash
+aws rds describe-db-instances --query "DBInstances[*].DBInstanceStatus" --profile lab
+```
+
+4. Find DB subnet group
+```bash
+aws rds describe-db-subnet-groups --query "DBSubnetGroups[*].DBSubnetGroupName" --profile lab
+```
+
