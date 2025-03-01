@@ -10,7 +10,7 @@ jobs:
    steps:
      - uses: actions/checkout@v4
        with:
-         ref: my-branch
+         ref: prakash/feature-cloudformation-updates
      - name: install aws cli
        uses: unfor19/install-aws-cli-action@v1
        with:
@@ -44,7 +44,7 @@ jobs:
    steps:
      - uses: actions/checkout@v4
        with:
-       ref: my-branch
+         ref: prakash/feature-cloudformation-updates 
      - name: deploy frontend
        run: echo "Deploying frontend..."
      - name: deploy backend
