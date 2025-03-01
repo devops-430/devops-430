@@ -37,7 +37,18 @@ jobs:
          aws cloudformation create-stack \
            --stack-name php-3-tier \
            --template-url https://my-cloudformation-templates-devops430.s3.amazonaws.com/php-3-tier.yaml \
-           --region us-east-1
+           --region us-east-1aws cloudformation create-stack \
+             --stack-name php-3-tier \
+               --template-url https://my-cloudformation-templates-devops430-a.s3.amazonaws.com/php-3-tier.yaml \
+                 --region us-east-1 \
+                   --profile lab \
+                     --parameters \
+                         ParameterKey=KeyPairName,ParameterValue=my-key-pair \
+                             ParameterKey=S3BucketName,ParameterValue=my-cloudformation-templates-devops430-a \
+                                 ParameterKey=UserDataFileName,ParameterValue=user-data.sh \
+                                     ParameterKey=EnableFrontendStorageStack,ParameterValue=false \
+                                         ParameterKey=EnableDatabaseStack,ParameterValue=false \
+                                           --capabilities CAPABILITY_IAM
  deploy-app:
    runs-on: ubuntu-latest
    needs: deploy-php-app-cloudformation-stack
