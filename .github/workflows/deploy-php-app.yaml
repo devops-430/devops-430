@@ -34,7 +34,7 @@ jobs:
          aws s3 cp scripts/user-data.sh s3://my-cloudformation-templates-devops430/
      - name: deploy stack
        run: |
-         aws cloudformation create-stack \aws cloudformation create-stack \
+         aws cloudformation create-stack \
            --stack-name php-3-tier \
            --template-url https://my-cloudformation-templates-devops430-a.s3.amazonaws.com/php-3-tier.yaml \
            --region us-east-1 \
