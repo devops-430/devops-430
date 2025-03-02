@@ -45,7 +45,8 @@ jobs:
                  ParameterKey=EnableFrontendStorageStack,ParameterValue=false \
                  ParameterKey=EnableDatabaseStack,ParameterValue=false \
            --capabilities CAPABILITY_IAM
-                      
+          aws cloudformation describe-stacks --stack-name php-3-tier --region us-east-1
+
  deploy-app:
    runs-on: ubuntu-latest
    needs: deploy-php-app-cloudformation-stack
