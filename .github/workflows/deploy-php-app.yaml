@@ -40,7 +40,7 @@ jobs:
            --region us-east-1 \
            --parameters \
                  ParameterKey=KeyPairName,ParameterValue=my-key-pair \
-                 ParameterKey=S3BucketName,ParameterValue=my-cloudformation-templates-devops430-a \
+                 ParameterKey=S3BucketName,ParameterValue=my-cloudformation-templates-devops430 \
                  ParameterKey=UserDataFileName,ParameterValue=user-data.sh \
                  ParameterKey=EnableFrontendStorageStack,ParameterValue=false \
                  ParameterKey=EnableDatabaseStack,ParameterValue=false \
