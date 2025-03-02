@@ -27,11 +27,11 @@ jobs:
          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
 
      - name: create s3 bucket
-       run: aws s3 mb s3://my-cloudformation-templates-devops430 --region us-east-1
+       run: aws s3 mb s3://my-cloudformation-templates-devops430-pasang --region us-east-1
      - name: copy templates
        run: |
-         aws s3 cp cloudformation-template/ s3://my-cloudformation-templates-devops430/ --recursive
-         aws s3 cp scripts/user-data.sh s3://my-cloudformation-templates-devops430/
+         aws s3 cp cloudformation-template/ s3://my-cloudformation-templates-devops430-pasang/ --recursive
+         aws s3 cp scripts/user-data.sh s3://my-cloudformation-templates-devops430-pasang/
      - name: deploy stack
        run: |
          aws cloudformation create-stack \
