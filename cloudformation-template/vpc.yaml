@@ -230,6 +230,8 @@ Outputs:
   PublicSubnet1ID:
     Description: The ID of the first public subnet
     Value: !Ref PublicSubnet1
+    Export:
+      Name: !Sub "${AWS::StackName}-PublicSubnet1ID"
     
   PublicSubnet2ID:
     Description: The ID of the second public subnet
