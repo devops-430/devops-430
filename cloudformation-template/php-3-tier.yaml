@@ -1,49 +1,151 @@
 AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  # StackName:
+  #   Description: Name of the CloudFormation stack
+  #   Type: String
+  S3BucketName:
+    Description: The name of the S3 bucket where the user-data script is stored
+    Type: String
+
+  UserDataFileName:
+    Description: The name of the user-data file in the S3 bucket
+    Type: String
+  KeyPairName:
+    Description: Name of the EC2 key pair
+    Type: String
+    Default: my-key-pair
+  EnableNetworkStack:
+    Description: Enable the Network Stack (true/false)
+    Type: String
+    Default: "true"
+    AllowedValues: ["true", "false"]
+
+  EnableBackendStack:
+    Description: Enable the Backend Stack (true/false)
+    Type: String
+    Default: "true"
+    AllowedValues: ["true", "false"]
+
+  EnableDatabaseStack:
+    Description: Enable the Database Stack (true/false)
+    Type: String
+    Default: "true"
+    AllowedValues: ["true", "false"]
+
+  EnableFrontendStorageStack:
+    Description: Enable the Frontend Storage Stack (true/false)
+    Type: String
+    Default: "true"
+    AllowedValues: ["true", "false"]
+
+Conditions:
+  DeployNetworkStack: !Equals [!Ref EnableNetworkStack, "true"]
+  DeployBackendStack: !Equals [!Ref EnableBackendStack, "true"]
+  DeployDatabaseStack: !Equals [!Ref EnableDatabaseStack, "true"]
+  DeployFrontendStorageStack: !Equals [!Ref EnableFrontendStorageStack, "true"]
+
 Resources:
+  # KeyPairStack:
+  #   Type: AWS::CloudFormation::Stack
+  #   Properties:
+  #     TemplateURL: !Sub "https://s3.amazonaws.com/${S3BucketName}/keypair.yaml"
+  #     Parameters:
+  #       KeyPairName: !Ref KeyPairName
+        
   NetworkStack:
     Type: AWS::CloudFormation::Stack
+    Condition: DeployNetworkStack
     Properties:
-      TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/vpc-template.yaml"
-
-  ComputeStack:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${S3BucketName}/vpc.yaml"
+  BackendStack:
     Type: AWS::CloudFormation::Stack
+    Condition: DeployBackendStack
+    DependsOn:
+      - NetworkStack
+      # - KeyPairStack
     Properties:
-      TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/rds-template.yaml"
-  ComputeStack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/ec2-instance.yaml"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${S3BucketName}/ec2-instance.yaml"
       Parameters:
-        VpcId: !GetAtt NetworkStack.Outputs.VPCId
-        PublicSubnetId: !GetAtt NetworkStack.Outputs.PublicSubnetId        
+        VpcId: !GetAtt NetworkStack.Outputs.VPCID
+        PublicSubnetId: !GetAtt NetworkStack.Outputs.PublicSubnet1ID
+        # KeyPairName: !GetAtt KeyPairStack.Outputs.KeyPairNameOutput  
+        KeyPairName: !Ref KeyPairName
+        S3BucketName: !Ref S3BucketName
+        UserDataFileName: !Ref UserDataFileName     
   DatabaseStack:
     Type: AWS::CloudFormation::Stack
+    Condition: DeployDatabaseStack
+    DependsOn:
+      - NetworkStack
     Properties:
-      TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/rds.yaml"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${S3BucketName}/rds.yaml"
       Parameters:
-        VpcId: !GetAtt NetworkStack.Outputs.VPCId
-        DBSubnetIds: !GetAtt NetworkStack.Outputs.DBSubnetIds
+        VpcId: !GetAtt NetworkStack.Outputs.VPCID
+        PrivateSubnet1: !GetAtt NetworkStack.Outputs.PrivateSubnet1ID
+        PrivateSubnet2: !GetAtt NetworkStack.Outputs.PrivateSubnet2ID
+        SecurityGroupId: !GetAtt NetworkStack.Outputs.MySQLSecurityGroupID
   FrontendStorageStack:
     Type: AWS::CloudFormation::Stack
+    Condition: DeployFrontendStorageStack
+    # DependsOn:
+    #   - NetworkStack
+    #   - DatabaseStack
+    #   - BackendStack
     Properties:
-      TemplateURL: !Sub "https://s3.amazonaws.com/my-cloudformation-templates-devops430/s3-template.yaml"
+      TemplateURL: !Sub "https://s3.amazonaws.com/${S3BucketName}/s3-template.yaml"
 Outputs:
   VPCStackOutput:
     Description: The VPC stack output
-    Value: !GetAtt VPCStack.Outputs.VPCID
+    Value: !GetAtt NetworkStack.Outputs.VPCID
 
+  PublicSubnet1ID:
+    Description: The ID of the first public subnet
+    Value: !GetAtt NetworkStack.Outputs.PublicSubnet1ID
+
+  PublicSubnet2ID:
+    Description: The ID of the second public subnet
+    Value: !GetAtt NetworkStack.Outputs.PublicSubnet2ID
+
+  PrivateSubnet1ID:
+    Description: The ID of the first private subnet
+    Value: !GetAtt NetworkStack.Outputs.PrivateSubnet1ID
+
+  PrivateSubnet2ID:
+    Description: The ID of the second private subnet
+    Value: !GetAtt NetworkStack.Outputs.PrivateSubnet2ID
+
+  MySQLSecurityGroupID:
+    Description: The security group ID for MySQL
+    Value: !GetAtt NetworkStack.Outputs.MySQLSecurityGroupID
   S3StackOutput:
     Description: The S3 stack output
-    Value: !GetAtt S3Stack.Outputs.BucketName
+    Value: !If
+      - DeployFrontendStorageStack
+      - !GetAtt FrontendStorageStack.Outputs.BucketName
+      - ""
+  S3StackOutput:
+    Description: The S3 stack output
+    Value: !If
+      - DeployFrontendStorageStack
+      - !GetAtt FrontendStorageStack.Outputs.BucketName
+      - ""
 
   RDSStackOutput:
     Description: The RDS stack output
-    Value: !GetAtt RDSStack.Outputs.DBInstance
-
-  Php3TierStackOutput:
-    Description: The PHP 3-tier stack output
-    Value: !GetAtt Php3TierStack.Outputs.WebServer
+    Value: !If
+      - DeployDatabaseStack
+      - !GetAtt DatabaseStack.Outputs.SampleCloudFormationRDSInstance
+      - ""
 
   EC2InstanceStackOutput:
     Description: The EC2 Instance stack output
-    Value: !GetAtt EC2InstanceStack.Outputs.EC2PublicIP
+    Value: !If
+      - DeployBackendStack
+      - !GetAtt BackendStack.Outputs.EC2PublicIP
+      - ""
+  RDSDatabaseEndpoint:
+    Description: The RDS database endpoint
+    Value: !If
+      - DeployDatabaseStack
+      - !GetAtt DatabaseStack.Outputs.SampleCloudFormationRDSInstanceEndPoint
+      - ""

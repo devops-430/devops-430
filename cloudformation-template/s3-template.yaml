@@ -5,7 +5,8 @@ Resources:
   S3WebsiteBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${AWS::StackName}-static-site"
+      # BucketName: !Sub "${AWS::StackName}-static-site-devops430-aasdfasdf"
+      BucketName: devops430-static-site-devops430-aasdfasdf1234
       WebsiteConfiguration:
         IndexDocument: index.html
         ErrorDocument: error.html
