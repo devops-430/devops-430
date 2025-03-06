@@ -42,8 +42,6 @@ jobs:
                  ParameterKey=KeyPairName,ParameterValue=my-key-pair \
                  ParameterKey=S3BucketName,ParameterValue=my-cloudformation-templates-devops430-pasang \
                  ParameterKey=UserDataFileName,ParameterValue=user-data.sh \
-                 ParameterKey=EnableFrontendStorageStack,ParameterValue=false \
-                 ParameterKey=EnableDatabaseStack,ParameterValue=false \
            --capabilities CAPABILITY_IAM
                       
  deploy-app:
