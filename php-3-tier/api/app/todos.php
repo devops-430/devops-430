@@ -1,5 +1,5 @@
 <?php 
-require_once "./app/Database.php";
+require_once "./Database.php";
 
 class Todo extends Database
 {
