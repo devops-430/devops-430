@@ -1,148 +1,28 @@
-<!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Introduction to DevOps - Basic Course</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HTML Web Page</title>
+  </head>
+  <body>
+    <h1>Hello, World!</h1>
+    <div id="todos"></div>
 
-        h1, h2 {
-            color: #333;
-        }
+    <script>
+      fetch("http://localhost:5000/")
+        .then((response) => response.json())
+        .then((data) => {
+          const todos = document.getElementById("todos");
 
-        .course-overview {
-            background-color: #e8f4f8;
-            padding: 20px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-
-        .module {
-            margin: 20px 0;
-            padding: 15px;
-            background-color: #f9f9f9;
-            border-left: 4px solid #007bff;
-        }
-
-        .lab {
-            background-color: #e7ffe7;
-            padding: 15px;
-            margin: 15px 0;
-            border-left: 4px solid #28a745;
-        }
-
-        .requirements {
-            background-color: #fff3cd;
-            padding: 15px;
-            margin: 15px 0;
-            border-left: 4px solid #ffc107;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Introduction to DevOps</h1>
-        <p>Basic Course - Start your DevOps journey here</p>
-
-        <div class="course-overview">
-            <h2>Course Overview</h2>
-            <p><strong>Prerequisites:</strong> Basic computer literacy, familiarity with command line interface</p>
-            <p><strong>Duration:</strong> 4 weeks (20 hours total)</p>
-            <p>Learn the fundamentals of DevOps practices, tools, and culture.</p>
-        </div>
-
-        <h2>Course Modules</h2>
-        
-        <div class="module">
-            <h3>Module 1: Introduction to DevOps</h3>
-            <ul>
-                <li>What is DevOps?</li>
-                <li>DevOps lifecycle</li>
-                <li>Benefits and challenges</li>
-                <li>DevOps culture and practices</li>
-            </ul>
-        </div>
-
-        <div class="module">
-            <h3>Module 2: Version Control with Git</h3>
-            <ul>
-                <li>Basic Git commands</li>
-                <li>Branching strategies</li>
-                <li>Git workflows</li>
-                <li>Working with remote repositories</li>
-            </ul>
-        </div>
-
-        <div class="module">
-            <h3>Module 3: Continuous Integration</h3>
-            <ul>
-                <li>Introduction to CI/CD</li>
-                <li>Jenkins fundamentals</li>
-                <li>Building pipelines</li>
-                <li>Automated testing</li>
-            </ul>
-        </div>
-
-        <div class="module">
-            <h3>Module 4: Infrastructure as Code</h3>
-            <ul>
-                <li>Introduction to IaC</li>
-                <li>Basic Terraform concepts</li>
-                <li>Cloud provisioning basics</li>
-                <li>Configuration management overview</li>
-            </ul>
-        </div>
-
-        <div class="module">
-            <h3>Module 5: Monitoring & Logging</h3>
-            <ul>
-                <li>Importance of monitoring</li>
-                <li>Basic Prometheus concepts</li>
-                <li>Log management basics</li>
-                <li>Alerting fundamentals</li>
-            </ul>
-        </div>
-
-        <div class="lab">
-            <h3>Hands-on Labs</h3>
-            <ul>
-                <li>Lab 1: Set up your first CI pipeline</li>
-                <li>Lab 2: Infrastructure provisioning exercise</li>
-                <li>Lab 3: Monitoring setup simulation</li>
-                <li>Lab 4: Collaborative Git workflow</li>
-            </ul>
-        </div>
-
-        <div class="requirements">
-            <h3>Course Requirements</h3>
-            <ul>
-                <li>Access to a computer with internet connection</li>
-                <li>Basic understanding of Linux commands</li>
-                <li>Familiarity with any programming/scripting language</li>
-                <li>GitHub account (free tier)</li>
-            </ul>
-        </div>
-
-        <div style="text-align: center; margin-top: 30px;">
-            <p><a href="#"><strong>Download Course Syllabus</strong></a></p>
-            <p>Start your DevOps journey today!</p>
-        </div>
-    </div>
-</body>
+          data?.forEach((item, index) => {
+            const todo = document.createElement("h2");
+            todo.textContent = item._id + ". " + item.todo;
+            todos.appendChild(todo);
+          });
+        })
+        .catch((error) => {
+          console.log("Error: ", error);
+        });
+    </script>
+  </body>
 </html>
