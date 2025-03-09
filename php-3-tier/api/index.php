@@ -4,25 +4,12 @@ header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: http://localhost:3000');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 
+require "./app/config.php";
+require_once "./app/todos.php";
+
+$todoModel = new Todo();
+$response = $todoModel->getTodos(10);
 // Create a response array
-$response = [
-    [
-        "_id" => 1,
-        "todo" => "Todo 1"
-    ],
-    [
-        "_id" => 2,
-        "todo" => "Todo 2"
-    ],
-    [
-        "_id" => 3,
-        "todo" => "Todo 3"
-    ],
-    [
-        "_id" => 4,
-        "todo" => "Todo 4"
-    ]
-];
 
 // Encode the response array as JSON
 $jsonResponse = json_encode($response);
