@@ -3,13 +3,21 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Sample CloudFormation template with YAML - RDS Definition
 
 Parameters:
-  StackName:
-    Description: Target VPC Stack Name
-    Type: String
-    MinLength: 1
-    MaxLength: 255
-    AllowedPattern: ^[a-zA-Z][-a-zA-Z0-9]*$
-    Default: sample-cloudformation-vpc-1
+  VpcId:
+    Description: VPC ID for the RDS instance
+    Type: AWS::EC2::VPC::Id
+
+  PrivateSubnet1:
+    Description: First private subnet ID
+    Type: AWS::EC2::Subnet::Id
+
+  PrivateSubnet2:
+    Description: Second private subnet ID
+    Type: AWS::EC2::Subnet::Id
+
+  SecurityGroupId:
+    Description: Security Group ID for RDS
+    Type: AWS::EC2::SecurityGroup::Id
 
   RdsUser:
     Description: Database Master User Name
@@ -34,7 +42,7 @@ Resources:
     Type: AWS::RDS::DBInstance
     DeletionPolicy: Retain
     Properties:
-      DBInstanceIdentifier: sample-cloudformation-postgresql
+      DBInstanceIdentifier: sample-cloudformation-postgresql-1
       DBName: SampleCloudFormationPostgreSQL
       Engine: postgres
       EngineVersion: "15.7"
@@ -47,7 +55,7 @@ Resources:
       MonitoringInterval: 10
       MonitoringRoleArn: !GetAtt SampleCloudFormationDBMonitorRole.Arn
       VPCSecurityGroups:
-        - Fn::ImportValue: !Sub ${StackName}-MySQLSecurityGroupID
+        - !Ref SecurityGroupId
       BackupRetentionPeriod: 7
       StorageType: gp2
       PubliclyAccessible: false
@@ -57,8 +65,10 @@ Resources:
     Properties:
       DBSubnetGroupDescription: DB Subnet Group for Private Subnet
       SubnetIds:
-        - Fn::ImportValue: !Sub ${StackName}-PrivateSubnet1
-        - Fn::ImportValue: !Sub ${StackName}-PrivateSubnet2
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      # DependsOn:
+      # - SampleCloudFormationRDSInstance
 
   SampleCloudFormationDBMonitorRole:
     Type: AWS::IAM::Role
@@ -81,10 +91,10 @@ Outputs:
     Description: RDS Instance
     Value: !Ref SampleCloudFormationRDSInstance
     Export:
-      Name: !Sub ${StackName}-RDS
+      Name: !Sub ${AWS::StackName}-RDS
 
   SampleCloudFormationRDSInstanceEndPoint:
     Description: RDS Endpoint
     Value: !GetAtt SampleCloudFormationRDSInstance.Endpoint.Address
     Export:
-      Name: !Sub ${StackName}-RDSEndpoint
+      Name: !Sub ${AWS::StackName}-RDSEndpoint
