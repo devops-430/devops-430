@@ -2,7 +2,7 @@ name: php-3-tier
 version: '3'
 services:
   frontend:
-    image:httpd:latest
+    image: httpd:latest
     ports:
       - 3000:80
     volumes:
