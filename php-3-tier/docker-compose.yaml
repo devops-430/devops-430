@@ -14,8 +14,8 @@ services:
     ports:
       - 5000:80
     depends_on:
-      - db
-  db:
+      - database
+  database:
     image: mysql:latest
     environment:
       MYSQL_DATABASE: todo_app
