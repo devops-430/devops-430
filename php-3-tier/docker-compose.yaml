@@ -6,7 +6,7 @@ services:
         ports:
             - 3000:80
         volumes:
-            - ./frontend:/user/local/apache2/htdocs
+            - ./frontend:/usr/local/apache2/htdocs
     backend:
         image: pasangrumba123/php-3-tier-me
         ports:
