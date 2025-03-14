@@ -10,7 +10,7 @@ services:
   backend:
     image: prakash9295/php-3tier-be-prakash
     volumes:
-      - ./backend:/var/www/html
+      - ./api:/var/www/html
     ports:
       - 5000:80
     depends_on:
