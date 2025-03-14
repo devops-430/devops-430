@@ -15,7 +15,7 @@ services:
             - ./api:/var/www/html
         depends_on:
             - db
-    db:
+    database:
         image: mysql:8.0
         environment:
             MYSQL_DATABASE: todo_app
