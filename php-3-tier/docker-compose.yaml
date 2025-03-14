@@ -14,7 +14,7 @@ services:
         volumes:
             - ./api:/var/www/html
         depends_on:
-            - db
+            - database
     database:
         image: mysql:8.0
         environment:
