@@ -1,7 +1,7 @@
 <?php
 // Set the response content type to JSON
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: http://ec2-98-82-21-51.compute-1.amazonaws.com:3000/');
+header('Access-Control-Allow-Origin: http://ec2-98.82.21.51.compute-1.amazonaws.com:3000');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 
 require "./app/config.php";
