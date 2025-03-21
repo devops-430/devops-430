@@ -66,7 +66,7 @@ Resources:
   EC2Instance:
     Type: AWS::EC2::Instance
     Properties:
-      InstanceType: t2.micro
+      InstanceType: t3.medium
       KeyName: !Ref KeyPairName
       ImageId: ami-04b4f1a9cf54c11d0  # Update this with the correct AMI for your region
       SubnetId: !Ref PublicSubnetId
@@ -88,7 +88,7 @@ Resources:
           bash /tmp/user-data.sh
       Tags:
         - Key: Name
-          Value: php-3-tier-webserver
+          Value: k3s-node
 
 Outputs:
   EC2PublicIP:
