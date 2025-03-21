@@ -3,7 +3,7 @@ on:
  workflow_dispatch:
    inputs:
      ubuntu_ssh_pub_key:
-       description: ubuntu-ssh-public-key
+       description: 3.92.19.67
        required: true
        type: string
      aws_access_key_id:
