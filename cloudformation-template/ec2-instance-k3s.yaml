@@ -1,1 +1,96 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: EC2 instance in the public subnet with dynamic VPC and subnet imports
 
+Parameters:
+  VpcId:
+    Type: String
+    Description: The VPC ID where the EC2 instance will be deployed.
+  PublicSubnetId:
+    Type: String
+    Description: The Public Subnet ID where the EC2 instance will be deployed.
+  KeyPairName:
+    Type: String
+    Description: Name of the EC2 key pair to use.
+  UserDataFileName:
+    Type: String
+    Description: The name of the user-data script file in the S3 bucket.
+  S3BucketName:
+    Type: String
+    Description: The name of the S3 bucket where the user-data script is stored.
+
+Resources:
+  # Security Group for EC2 Instance
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH and HTTP
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  # IAM Role for EC2 to Access S3
+  EC2InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: S3ReadAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: !Sub "arn:aws:s3:::${S3BucketName}/*"
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref EC2InstanceRole
+
+  # EC2 Instance in the public subnet
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.medium
+      KeyName: !Ref KeyPairName
+      ImageId: ami-04b4f1a9cf54c11d0  # Update this with the correct AMI for your region
+      SubnetId: !Ref PublicSubnetId
+      SecurityGroupIds:
+        - !Ref EC2SecurityGroup
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          # Update package list and install AWS CLI
+          sudo apt update -y
+          sudo apt install -y aws-cli
+
+          # Download user-data script from S3
+          aws s3 cp s3://${S3BucketName}/${UserDataFileName} /tmp/user-data.sh
+          chmod +x /tmp/user-data.sh
+
+          # Execute the user-data script
+          bash /tmp/user-data.sh
+      Tags:
+        - Key: Name
+          Value: k3s-node
+
+Outputs:
+  EC2PublicIP:
+    Description: Public IP of the EC2 instance
+    Value: !GetAtt EC2Instance.PublicIp
