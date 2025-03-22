@@ -15,10 +15,10 @@ on:
        required: true
        type: string
      aws_region:
-       description
-      required: true
-      default: "us-east-1"
-      type: string
+       description: AWS default region
+       required: true
+       default: "us-east-1"
+       type: string
 jobs:
  deploy-k3s-lab:
    runs-on: ubuntu-latest
