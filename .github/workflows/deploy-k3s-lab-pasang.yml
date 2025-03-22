@@ -54,7 +54,7 @@ jobs:
      - name: copy templates
        run: |
          aws s3 cp cloudformation-template/ec2-instance-k3s.yaml s3://my-cloudformation-templates-devops430-pasang/ --recursive
-        aws s3 cp scripts/user-data.sh s3://my-cloudformation-templates-devops430-pasang/
+         aws s3 cp scripts/user-data.sh s3://my-cloudformation-templates-devops430-pasang/
      - name: deploy k3s ec2 instance
        run: |
          aws cloudformation create-stack \
