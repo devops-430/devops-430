@@ -1,6 +1,6 @@
 <?php 
-prakash/feature-cloudformation-updates
-require_once "./app/Database.php";
+
+require_once "./app/database.php";
 
 class Todo extends Database
 {
