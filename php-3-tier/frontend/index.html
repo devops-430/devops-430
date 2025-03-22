@@ -9,7 +9,7 @@
     <div id="todos"></div>
 
     <script>
-      fetch("http://ec2-98-82-21-51.compute-1.amazonaws.com:5000/")
+      fetch("http://localhost:5000/")
         .then((response) => response.json())
         .then((data) => {
           const todos = document.getElementById("todos");

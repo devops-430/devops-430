@@ -1,21 +1,21 @@
 name: php-3-tier
 version: '3'
 services:
-  frontend:
+  fronted:
     image: httpd:latest
     ports:
       - 3000:80
     volumes:
       - ./frontend:/usr/local/apache2/htdocs
   backend:
-    image: prakash9295/php-3tier-be-prakash
+    image: dpaktamang/php-3-tier-be
     volumes:
-      - ./api:/var/www/html
+      - ./backend:/var/www/html
     ports:
       - 5000:80
     depends_on:
-      - database
-  database:
+      - db
+  db:
     image: mysql:latest
     environment:
       MYSQL_DATABASE: todo_app
@@ -24,5 +24,4 @@ services:
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
     volumes:
       - ./db:/docker-entrypoint-initdb.d
-
-
+  
