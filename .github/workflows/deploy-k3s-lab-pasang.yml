@@ -19,6 +19,7 @@ on:
        required: true
        default: "us-east-1"
        type: string
+
 jobs:
  deploy-k3s-lab:
    runs-on: ubuntu-latest
