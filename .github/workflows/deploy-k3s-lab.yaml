@@ -1,0 +1,67 @@
+name: Setup k3s Lab - Deepak
+on:
+  workflow_dispatch:
+    inputs:
+      ubuntu_ssh_pub_key:
+        description: ubuntu-ssh-public-key
+        required: true
+        type: string
+      aws_access_key_id:
+        description: AWS access key
+        required: true
+        type: string
+      aws_secret_access_key:
+        description: AWS secret access key
+        required: true
+        type: string
+      aws_region:
+        description: AWS Default region
+        required: true
+        default: "us-east-1"
+        type: string
+jobs:
+  deploy-k3s-lab:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v0.1.1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+
+      - name: AWS Login
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ github.event.inputs.aws_access_key_id }}
+          aws-secret-access-key: ${{ github.event.inputs.aws_secret_access_key }}
+          aws-region: ${{ github.event.inputs.aws_region }}
+      
+      - name: install aws cli
+        uses: unfor19/install-aws-cli-action@v1
+        with:
+          version: 2 
+          verbose: false
+          arch: amd64
+
+      - name: Verify AWS Version
+        run: aws --version
+
+      - name: create s3 bucket
+        run: aws s3 mb s3://my-cloudformation-templates-devops430-deepak --region us-east-1
+      - name: copy templates
+        run: |
+          aws s3 cp cloudformation-template/ec2-instance-k3s.yaml s3://my-cloudformation-templates-devops430-deepak/ --recursive
+          aws s3 cp scripts/user-data.sh s3://my-cloudformation-templates-devops430-deepak/
+      - name: deploy k3s ec2 instance
+        run: |
+          aws cloudformation create-stack \
+           --stack-name k3s-ec2-instance-deepak \
+           --template-url https://my-cloudformation-templates-devops430-deepak.s3.amazonaws.com/ec2-instance-k3s.yaml \
+           --region us-east-1 \
+           --parameters \
+                 ParameterKey=KeyPairName,ParameterValue=my-key-pair \
+                 ParameterKey=S3BucketName,ParameterValue=my-cloudformation-templates-devops430-deepak \
+                 ParameterKey=UserDataFileName,ParameterValue=user-data.sh \
+           --capabilities CAPABILITY_IAM

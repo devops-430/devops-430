@@ -1,10 +1,12 @@
 <?php
 // Set the response content type to JSON
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: http://ec2-44-204-202-99.compute-1.amazonaws.com:3000');
+
+header('Access-Control-Allow-Origin: http://localhost:3000');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 
-require_once "./app/config.php";
+require "./app/config.php";
+
 require_once "./app/todos.php";
 
 $todoModel = new Todo();
