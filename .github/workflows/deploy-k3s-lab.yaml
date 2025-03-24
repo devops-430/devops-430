@@ -22,11 +22,12 @@ on:
       vpc_id:
         description: AWS Default VPC
         required: true
+        default
         type: string
       subnet_id:
         description: AWS Subnet id
         required: true
-        type: string
+       type: string
 jobs:
   deploy-k3s-lab:
     runs-on: ubuntu-latest
@@ -60,7 +61,7 @@ jobs:
         run: aws s3 mb s3://my-cloudformation-templates-devops430-deepak --region us-east-1
       - name: copy templates
         run: |
-          aws s3 cp cloudformation-template/ec2-instance-k3s.yaml s3://my-cloudformation-templates-devops430-deepak/ --recursive
+          aws s3 cp cloudformation-template/ec2-instance-k3s.yaml s3://my-cloudformation-templates-devops430-deepak/
           aws s3 cp scripts/user-data.sh s3://my-cloudformation-templates-devops430-deepak/
       - name: deploy k3s ec2 instance
         run: |
