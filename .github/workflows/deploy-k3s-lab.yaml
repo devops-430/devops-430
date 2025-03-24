@@ -55,6 +55,8 @@ jobs:
         run: aws s3 mb s3://my-cloudformation-templates-devops430-deepak --region us-east-1
       - name: copy templates
         run: |
+          pwd
+          ls
           find ./ -type f -name ec2-instance-k3s.yaml
           aws s3 cp cloudformation-template/ec2-instance-k3s.yaml s3://my-cloudformation-templates-devops430-deepak/ --recursive
           aws s3 cp scripts/user-data.sh s3://my-cloudformation-templates-devops430-deepak/
