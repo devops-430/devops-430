@@ -19,17 +19,20 @@ on:
         required: true
         default: "us-east-1"
         type: string
+      vpc_id:
+        description: AWS Default VPC
+        required: true
+        type: string
+      subnet_id:
+        description: AWS Subnet id
+        required: true
+        type: string
 jobs:
   deploy-k3s-lab:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Deploy to server
-        uses: appleboy/ssh-action@v0.1.1
-        with:
-          host: ${{ secrets.SERVER_HOST }}
+        uses: actions/checkout@v4
 
       - name: AWS Login
         uses: aws-actions/configure-aws-credentials@v1
@@ -52,6 +55,7 @@ jobs:
         run: aws s3 mb s3://my-cloudformation-templates-devops430-deepak --region us-east-1
       - name: copy templates
         run: |
+          find ./ type f -name ec2-instance-k3s.yaml
           aws s3 cp cloudformation-template/ec2-instance-k3s.yaml s3://my-cloudformation-templates-devops430-deepak/ --recursive
           aws s3 cp scripts/user-data.sh s3://my-cloudformation-templates-devops430-deepak/
       - name: deploy k3s ec2 instance
@@ -64,4 +68,6 @@ jobs:
                  ParameterKey=KeyPairName,ParameterValue=my-key-pair \
                  ParameterKey=S3BucketName,ParameterValue=my-cloudformation-templates-devops430-deepak \
                  ParameterKey=UserDataFileName,ParameterValue=user-data.sh \
+                 ParameterKey=VpcId,ParameterValue=${{ github.event.inputs.vpc_id }} \
+                 ParameterKey=PublicSubnetId,ParameterValue=${{ github.event.inputs.subnet_id }}
            --capabilities CAPABILITY_IAM
