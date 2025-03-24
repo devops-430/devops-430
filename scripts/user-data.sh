@@ -1,6 +1,7 @@
 #!/bin/bash
 yum update -y
 yum install -y httpd php php-mysqlnd git
+curl -sfL https://get.k3s.io | sh -
 
 # Clone the PHP application from GitHub (Update with your repo)
 cd /var/www/html
