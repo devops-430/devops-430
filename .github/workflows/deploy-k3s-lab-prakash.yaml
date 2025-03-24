@@ -19,7 +19,7 @@ on:
         required: true
         default: "us-east-1"
         type: string
-       vpc_id:
+      vpc_id:
         description: AWS Default VPC
         required: true
         type: string
