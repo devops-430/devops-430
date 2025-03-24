@@ -68,5 +68,5 @@ jobs:
                  ParameterKey=S3BucketName,ParameterValue=my-cloudformation-templates-devops430-deepak \
                  ParameterKey=UserDataFileName,ParameterValue=user-data.sh \
                  ParameterKey=VpcId,ParameterValue=${{ github.event.inputs.vpc_id }} \
-                 ParameterKey=PublicSubnetId,ParameterValue=${{ github.event.inputs.subnet_id }}
+                 ParameterKey=PublicSubnetId,ParameterValue=${{ github.event.inputs.subnet_id }} \
            --capabilities CAPABILITY_IAM
