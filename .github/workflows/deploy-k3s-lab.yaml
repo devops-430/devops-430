@@ -116,6 +116,14 @@ jobs:
             echo "Stack creation failed. Exiting..."
             exit 1
           fi
+          if [[ "$stack_status" == "ROLLBACK_COMPLETE" ]]; then
+            echo "Stack creation rolled back successfully. Exiting with success."
+            exit 0
+          fi
+
+          if [[ "$stack_status" == "CREATE_COMPLETE" ]]; then
+            echo "Stack creation completed successfully."
+          fi
 
       - name: Get EC2 Public IP
         run: |
