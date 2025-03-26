@@ -1,4 +1,4 @@
-name: Setup k3s Lab - Prakash
+name: Setup k3s Lab - prakash
 on:
   workflow_dispatch:
     inputs:
