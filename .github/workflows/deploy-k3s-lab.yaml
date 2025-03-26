@@ -79,22 +79,22 @@ jobs:
           echo "::set-output name=subnet_id::$subnet_id"
 
       - name: Create S3 Bucket
-        run: aws s3 mb s3://my-cloudformation-templates-devops430-deepak --region us-east-1
+        run: aws s3 mb s3://my-cloudformation-templates-devops430-prakash --region us-east-1
 
       - name: Copy Templates to S3
         run: |
-          aws s3 cp cloudformation-template/ec2-instance-k3s.yaml s3://my-cloudformation-templates-devops430-deepak/
-          aws s3 cp scripts/user-data.sh s3://my-cloudformation-templates-devops430-deepak/
+          aws s3 cp cloudformation-template/ec2-instance-k3s.yaml s3://my-cloudformation-templates-devops430-prakash/
+          aws s3 cp scripts/user-data.sh s3://my-cloudformation-templates-devops430-prakash/
 
       - name: Deploy K3S EC2 Instance
         run: |
           aws cloudformation create-stack \
-           --stack-name k3s-ec2-instance-deepak \
-           --template-url https://my-cloudformation-templates-devops430-deepak.s3.amazonaws.com/ec2-instance-k3s.yaml \
+           --stack-name k3s-ec2-instance-prakash \
+           --template-url https://my-cloudformation-templates-devops430-prakash.s3.amazonaws.com/ec2-instance-k3s.yaml \
            --region us-east-1 \
            --parameters \
                  ParameterKey=KeyPairName,ParameterValue=my-key-pair \
-                 ParameterKey=S3BucketName,ParameterValue=my-cloudformation-templates-devops430-deepak \
+                 ParameterKey=S3BucketName,ParameterValue=my-cloudformation-templates-devops430-prakash \
                  ParameterKey=UserDataFileName,ParameterValue=user-data.sh \
                  ParameterKey=VpcId,ParameterValue=${{ steps.fetch_vpc_subnet.outputs.vpc_id }} \
                  ParameterKey=PublicSubnetId,ParameterValue=${{ steps.fetch_vpc_subnet.outputs.subnet_id }} \
@@ -103,13 +103,13 @@ jobs:
       - name: Wait for Stack Creation to Complete
         id: stack_status
         run: |
-          stack_status=$(aws cloudformation describe-stacks --stack-name k3s-ec2-instance-deepak --query "Stacks[0].StackStatus" --output text)
+          stack_status=$(aws cloudformation describe-stacks --stack-name k3s-ec2-instance-prakash --query "Stacks[0].StackStatus" --output text)
           echo "Current Stack Status: $stack_status"
           
           while [[ "$stack_status" != "CREATE_COMPLETE" && "$stack_status" != "CREATE_FAILED" && "stack_status" != "ROLLBACK_COMPLETE" ]]; do
             echo "Waiting for stack to complete. Current status: $stack_status"
             sleep 30
-            stack_status=$(aws cloudformation describe-stacks --stack-name k3s-ec2-instance-deepak --query "Stacks[0].StackStatus" --output text)
+            stack_status=$(aws cloudformation describe-stacks --stack-name k3s-ec2-instance-prakash --query "Stacks[0].StackStatus" --output text)
           done
           
           if [[ "$stack_status" == "CREATE_FAILED" ]]; then
