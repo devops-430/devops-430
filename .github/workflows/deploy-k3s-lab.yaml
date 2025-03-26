@@ -106,7 +106,7 @@ jobs:
           stack_status=$(aws cloudformation describe-stacks --stack-name k3s-ec2-instance-deepak --query "Stacks[0].StackStatus" --output text)
           echo "Current Stack Status: $stack_status"
           
-          while [[ "$stack_status" != "CREATE_COMPLETE" && "$stack_status" != "CREATE_FAILED" ]]; do
+          while [[ "$stack_status" != "CREATE_COMPLETE" && "$stack_status" != "CREATE_FAILED" && "stack_status" != "ROLLBACK_COMPLETE" ]]; do
             echo "Waiting for stack to complete. Current status: $stack_status"
             sleep 30
             stack_status=$(aws cloudformation describe-stacks --stack-name k3s-ec2-instance-deepak --query "Stacks[0].StackStatus" --output text)
