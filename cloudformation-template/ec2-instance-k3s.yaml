@@ -1,13 +1,15 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: EC2 instance in the public subnet with dynamic VPC and subnet imports
+Description: EC2 instance in the public subnet with dynamic VPC and subnet imports, or creation if not found
 
 Parameters:
   VpcId:
     Type: String
-    Description: The VPC ID where the EC2 instance will be deployed.
+    Description: The VPC ID where the EC2 instance will be deployed. Leave empty to use the default VPC or create a new one.
+    Default: ""
   PublicSubnetId:
     Type: String
-    Description: The Public Subnet ID where the EC2 instance will be deployed.
+    Description: The Public Subnet ID where the EC2 instance will be deployed. Leave empty to create a new subnet.
+    Default: ""
   KeyPairName:
     Type: String
     Description: Name of the EC2 key pair to use.
@@ -18,13 +20,48 @@ Parameters:
     Type: String
     Description: The name of the S3 bucket where the user-data script is stored.
 
+Conditions:
+  CreateVpc: !Equals [!Ref VpcId, ""]
+  CreatePublicSubnet: !Equals [!Ref PublicSubnetId, ""]
+
 Resources:
+  # Fetch the default VPC if VpcId is not provided
+  DefaultVPC:
+    Type: AWS::EC2::VPC
+    Condition: CreateVpc
+    Properties:
+      CidrBlock: "10.0.0.0/16"
+      EnableDnsSupport: "true"
+      EnableDnsHostnames: "true"
+      Tags:
+        - Key: Name
+          Value: DefaultVPC
+
+  # Create Public Subnet if not provided
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Condition: CreatePublicSubnet
+    Properties:
+      VpcId: !If
+        - CreateVpc
+        - !Ref DefaultVPC
+        - !Ref VpcId
+      CidrBlock: "10.0.1.0/24"
+      AvailabilityZone: !Select [ 0, !GetAZs "" ]
+      MapPublicIpOnLaunch: "true"
+      Tags:
+        - Key: Name
+          Value: MyPublicSubnet
+
   # Security Group for EC2 Instance
   EC2SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Allow SSH and HTTP
-      VpcId: !Ref VpcId
+      VpcId: !If 
+        - CreateVpc
+        - !Ref DefaultVPC
+        - !Ref VpcId
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
@@ -69,7 +106,10 @@ Resources:
       InstanceType: t3.medium
       KeyName: !Ref KeyPairName
       ImageId: ami-04b4f1a9cf54c11d0  # Update this with the correct AMI for your region
-      SubnetId: !Ref PublicSubnetId
+      SubnetId: !If
+        - CreatePublicSubnet
+        - !Ref PublicSubnet
+        - !Ref PublicSubnetId
       SecurityGroupIds:
         - !Ref EC2SecurityGroup
       IamInstanceProfile: !Ref EC2InstanceProfile
@@ -94,3 +134,15 @@ Outputs:
   EC2PublicIP:
     Description: Public IP of the EC2 instance
     Value: !GetAtt EC2Instance.PublicIp
+  VpcIdOutput:
+    Description: VPC ID
+    Value: !If
+      - CreateVpc
+      - !Ref DefaultVPC
+      - !Ref VpcId
+  PublicSubnetIdOutput:
+    Description: Public Subnet ID
+    Value: !If
+      - CreatePublicSubnet
+      - !Ref PublicSubnet
+      - !Ref PublicSubnetId

@@ -21,11 +21,11 @@ on:
         type: string
       vpc_id:
         description: AWS Default VPC
-        required: true
+        required: false
         type: string
       subnet_id:
         description: AWS Subnet id
-        required: true
+        required: false
         type: string
 jobs:
   deploy-k3s-lab:
@@ -41,23 +41,52 @@ jobs:
           aws-secret-access-key: ${{ github.event.inputs.aws_secret_access_key }}
           aws-region: ${{ github.event.inputs.aws_region }}
       
-      - name: install aws cli
+      - name: Install AWS CLI
         uses: unfor19/install-aws-cli-action@v1
         with:
           version: 2 
           verbose: false
           arch: amd64
 
-      - name: Verify AWS Version
+      - name: Verify AWS CLI Version
         run: aws --version
 
-      - name: create s3 bucket
+      - name: Fetch Default VPC and Subnet if not provided
+        id: fetch_vpc_subnet
+        run: |
+          # Fetch default VPC if vpc_id is not provided
+          if [ -z "${{ github.event.inputs.vpc_id }}" ]; then
+            echo "Fetching default VPC..."
+            vpc_id=$(aws ec2 describe-vpcs --filters "Name=isDefault,Values=true" --query "Vpcs[0].VpcId" --output text)
+            echo "VPC ID: $vpc_id"
+          else
+            vpc_id="${{ github.event.inputs.vpc_id }}"
+            echo "Using provided VPC ID: $vpc_id"
+          fi
+
+          # Fetch subnet ID if subnet_id is not provided
+          if [ -z "${{ github.event.inputs.subnet_id }}" ]; then
+            echo "Fetching a subnet in the VPC $vpc_id..."
+            subnet_id=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$vpc_id" --query "Subnets[0].SubnetId" --output text)
+            echo "Subnet ID: $subnet_id"
+          else
+            subnet_id="${{ github.event.inputs.subnet_id }}"
+            echo "Using provided Subnet ID: $subnet_id"
+          fi
+
+          # Set the output variables for VPC and Subnet
+          echo "::set-output name=vpc_id::$vpc_id"
+          echo "::set-output name=subnet_id::$subnet_id"
+
+      - name: Create S3 Bucket
         run: aws s3 mb s3://my-cloudformation-templates-devops430-deepak --region us-east-1
-      - name: copy templates
+
+      - name: Copy Templates to S3
         run: |
           aws s3 cp cloudformation-template/ec2-instance-k3s.yaml s3://my-cloudformation-templates-devops430-deepak/
           aws s3 cp scripts/user-data.sh s3://my-cloudformation-templates-devops430-deepak/
-      - name: deploy k3s ec2 instance
+
+      - name: Deploy K3S EC2 Instance
         run: |
           aws cloudformation create-stack \
            --stack-name k3s-ec2-instance-deepak \
@@ -67,6 +96,36 @@ jobs:
                  ParameterKey=KeyPairName,ParameterValue=my-key-pair \
                  ParameterKey=S3BucketName,ParameterValue=my-cloudformation-templates-devops430-deepak \
                  ParameterKey=UserDataFileName,ParameterValue=user-data.sh \
-                 ParameterKey=VpcId,ParameterValue=${{ github.event.inputs.vpc_id }} \
-                 ParameterKey=PublicSubnetId,ParameterValue=${{ github.event.inputs.subnet_id }} \
+                 ParameterKey=VpcId,ParameterValue=${{ steps.fetch_vpc_subnet.outputs.vpc_id }} \
+                 ParameterKey=PublicSubnetId,ParameterValue=${{ steps.fetch_vpc_subnet.outputs.subnet_id }} \
            --capabilities CAPABILITY_IAM
+
+      - name: Wait for Stack Creation to Complete
+        id: stack_status
+        run: |
+          stack_status=$(aws cloudformation describe-stacks --stack-name k3s-ec2-instance-deepak --query "Stacks[0].StackStatus" --output text)
+          echo "Current Stack Status: $stack_status"
+          
+          while [[ "$stack_status" != "CREATE_COMPLETE" && "$stack_status" != "CREATE_FAILED" ]]; do
+            echo "Waiting for stack to complete. Current status: $stack_status"
+            sleep 30
+            stack_status=$(aws cloudformation describe-stacks --stack-name k3s-ec2-instance-deepak --query "Stacks[0].StackStatus" --output text)
+          done
+          
+          if [[ "$stack_status" == "CREATE_FAILED" ]]; then
+            echo "Stack creation failed. Exiting..."
+            exit 1
+          fi
+
+      - name: Get EC2 Public IP
+        run: |
+          ec2_public_ip=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=k3s-node" "Name=instance-state-name,Values=running" \
+            --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
+          
+          if [ "$ec2_public_ip" == "None" ]; then
+            echo "EC2 instance public IP not found."
+            exit 1
+          else
+            echo "EC2 Public IP: $ec2_public_ip"
+          fi
