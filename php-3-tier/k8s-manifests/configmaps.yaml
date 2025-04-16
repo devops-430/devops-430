@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+data:
+  DB_HOST: "mysql"
+  DB_NAME: "todo_app"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-config
+data:
+  MYSQL_DATABASE: "todo_app"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-files
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Todo App</title>
+    </head>
+    <body>
+        <h1>Todo App</h1>
+        <!-- Add your frontend files here -->
+    </body>
+    </html>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-files
+data:
+  index.php: |
+    <?php
+    // Add your backend PHP files here
+    ?>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-init
+data:
+  init.sql: |
+    -- Add your database initialization scripts here
+    CREATE TABLE IF NOT EXISTS todos (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      completed BOOLEAN DEFAULT FALSE
+    ); 
