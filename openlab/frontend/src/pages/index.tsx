@@ -20,8 +20,10 @@ import {
   Spinner,
   Center,
   Icon,
+  IconButton,
+  Tooltip,
 } from '@chakra-ui/react';
-import { FaServer } from 'react-icons/fa';
+import { FaServer, FaPlus, FaPowerOff, FaPlay, FaStop } from 'react-icons/fa';
 import { apiRequest } from '../utils/api';
 import apiConfig from '../config/api';
 
@@ -50,6 +52,11 @@ export default function HomePage() {
     fetchResources();
   }, []);
 
+  const handleLogout = () => {
+    localStorage.removeItem('apiKey');
+    window.location.reload();
+  };
+
   const fetchResources = async () => {
     try {
       const response = await apiRequest<LabResource[]>(apiConfig.endpoints.resources, {
@@ -69,7 +76,15 @@ export default function HomePage() {
 
   const handleStart = async (resourceId: string) => {
     try {
-      await apiRequest('POST', `${apiConfig.endpoints.resources}/${resourceId}/start`);
+      await apiRequest(
+        `${apiConfig.endpoints.resources}/${resourceId}/start`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
       toast({
         title: 'Resource started',
         description: 'The lab resource has been started successfully.',
@@ -91,7 +106,15 @@ export default function HomePage() {
 
   const handleStop = async (resourceId: string) => {
     try {
-      await apiRequest('POST', `${apiConfig.endpoints.resources}/${resourceId}/stop`);
+      await apiRequest(
+        `${apiConfig.endpoints.resources}/${resourceId}/stop`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
       toast({
         title: 'Resource stopped',
         description: 'The lab resource has been stopped successfully.',
@@ -147,100 +170,148 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <Container centerContent py={10}>
-        <Spinner size="xl" />
-      </Container>
+      <Center minH="100vh" bg="gray.50">
+        <VStack spacing={4}>
+          <Spinner size="xl" color="blue.500" thickness="4px" />
+          <Text color="gray.600">Loading resources...</Text>
+        </VStack>
+      </Center>
     );
   }
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <HStack justify="space-between" mb={6}>
-        <Heading size="lg">Lab Resources</Heading>
-        <Button
-          colorScheme="blue"
-          onClick={handleCreate}
-          isLoading={creating}
-          loadingText="Creating..."
-        >
-          Create New Resource
-        </Button>
-      </HStack>
+    <Box minH="100vh" bg="gray.50" py={8}>
+      <Container maxW="container.xl">
+        <Box bg="white" borderRadius="xl" shadow="sm" p={6}>
+          <Flex justify="space-between" align="center" mb={8}>
+            <HStack spacing={4}>
+              <Icon as={FaServer} w={6} h={6} color="blue.500" />
+              <Heading size="lg">Lab Resources</Heading>
+            </HStack>
+            <HStack spacing={4}>
+              <Tooltip label="Create New Resource" placement="top">
+                <Button
+                  colorScheme="blue"
+                  onClick={handleCreate}
+                  isLoading={creating}
+                  loadingText="Creating..."
+                  leftIcon={<FaPlus />}
+                  size="md"
+                  px={6}
+                >
+                  Create Resource
+                </Button>
+              </Tooltip>
+              <Tooltip label="Logout" placement="top">
+                <IconButton
+                  aria-label="Logout"
+                  icon={<FaPowerOff />}
+                  variant="ghost"
+                  colorScheme="red"
+                  onClick={handleLogout}
+                  size="md"
+                />
+              </Tooltip>
+            </HStack>
+          </Flex>
 
-      {resources.length === 0 ? (
-        <Box 
-          p={8} 
-          borderWidth={1} 
-          borderRadius="lg" 
-          borderStyle="dashed"
-          textAlign="center"
-        >
-          <Center flexDirection="column" py={8}>
-            <Icon as={FaServer} w={12} h={12} color="gray.400" mb={4} />
-            <Text fontSize="xl" color="gray.600" mb={2}>
-              No Lab Resources Available
-            </Text>
-            <Text color="gray.500" mb={4}>
-              Get started by creating your first lab resource
-            </Text>
-            <Button
-              colorScheme="blue"
-              onClick={handleCreate}
-              isLoading={creating}
-              loadingText="Creating..."
+          {resources.length === 0 ? (
+            <Box 
+              p={12} 
+              borderWidth={2}
+              borderRadius="xl" 
+              borderStyle="dashed"
+              borderColor="gray.200"
+              bg="gray.50"
             >
-              Create Your First Resource
-            </Button>
-          </Center>
+              <Center flexDirection="column">
+                <Icon as={FaServer} w={16} h={16} color="gray.300" mb={6} />
+                <Text fontSize="2xl" fontWeight="bold" color="gray.700" mb={2}>
+                  No Lab Resources Available
+                </Text>
+                <Text color="gray.500" fontSize="lg" mb={8}>
+                  Get started by creating your first lab resource
+                </Text>
+                <Button
+                  colorScheme="blue"
+                  size="lg"
+                  onClick={handleCreate}
+                  isLoading={creating}
+                  loadingText="Creating..."
+                  leftIcon={<FaPlus />}
+                >
+                  Create Your First Resource
+                </Button>
+              </Center>
+            </Box>
+          ) : (
+            <Box 
+              borderRadius="lg" 
+              borderWidth={1}
+              borderColor="gray.200"
+              overflow="hidden"
+            >
+              <Table variant="simple">
+                <Thead bg="gray.50">
+                  <Tr>
+                    <Th>Name</Th>
+                    <Th>Type</Th>
+                    <Th>Status</Th>
+                    <Th>IP Address</Th>
+                    <Th>Created At</Th>
+                    <Th>Actions</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {resources.map((resource) => (
+                    <Tr key={resource.id}>
+                      <Td fontWeight="medium">{resource.name}</Td>
+                      <Td>{resource.type}</Td>
+                      <Td>
+                        <Badge
+                          px={3}
+                          py={1}
+                          borderRadius="full"
+                          colorScheme={resource.status === 'running' ? 'green' : 'gray'}
+                        >
+                          {resource.status}
+                        </Badge>
+                      </Td>
+                      <Td fontFamily="mono">{resource.ipAddress}</Td>
+                      <Td>{new Date(resource.createdAt).toLocaleString()}</Td>
+                      <Td>
+                        <HStack spacing={2}>
+                          {resource.status === 'stopped' ? (
+                            <Tooltip label="Start Resource" placement="top">
+                              <IconButton
+                                aria-label="Start"
+                                icon={<FaPlay />}
+                                size="sm"
+                                colorScheme="green"
+                                onClick={() => handleStart(resource.id)}
+                              />
+                            </Tooltip>
+                          ) : (
+                            <Tooltip label="Stop Resource" placement="top">
+                              <IconButton
+                                aria-label="Stop"
+                                icon={<FaStop />}
+                                size="sm"
+                                colorScheme="red"
+                                onClick={() => handleStop(resource.id)}
+                              />
+                            </Tooltip>
+                          )}
+                        </HStack>
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </Box>
+          )}
         </Box>
-      ) : (
-        <Box overflowX="auto">
-          <Table variant="simple">
-            <Thead>
-              <Tr>
-                <Th>Name</Th>
-                <Th>Type</Th>
-                <Th>Status</Th>
-                <Th>IP Address</Th>
-                <Th>Created At</Th>
-                <Th>Actions</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {resources.map((resource) => (
-                <Tr key={resource.id}>
-                  <Td>{resource.name}</Td>
-                  <Td>{resource.type}</Td>
-                  <Td>
-                    <Badge
-                      colorScheme={resource.status === 'running' ? 'green' : 'red'}
-                    >
-                      {resource.status}
-                    </Badge>
-                  </Td>
-                  <Td>{resource.ipAddress || '-'}</Td>
-                  <Td>{new Date(resource.createdAt).toLocaleString()}</Td>
-                  <Td>
-                    <Button
-                      colorScheme={resource.status === 'running' ? 'red' : 'green'}
-                      size="sm"
-                      onClick={() => {
-                        if (resource.status === 'running') {
-                          handleStop(resource.id);
-                        } else {
-                          handleStart(resource.id);
-                        }
-                      }}
-                    >
-                      {resource.status === 'running' ? 'Stop' : 'Start'}
-                    </Button>
-                  </Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
-        </Box>
-      )}
-    </Container>
+      </Container>
+    </Box>
   );
 } 
