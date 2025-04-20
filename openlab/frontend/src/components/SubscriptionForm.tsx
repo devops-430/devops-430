@@ -15,7 +15,7 @@ import {
   AlertTitle,
   AlertDescription,
 } from '@chakra-ui/react';
-import axios from 'axios';
+import { apiRequest } from '../utils/api';
 import apiConfig from '../config/api';
 
 const SubscriptionForm: React.FC = () => {
@@ -32,9 +32,19 @@ const SubscriptionForm: React.FC = () => {
     setApiKey(null);
 
     try {
-      const response = await axios.post(apiConfig.endpoints.subscribe, { email });
-      
-      if (response.data.apiKey) {
+      const response = await apiRequest<{ apiKey: string }>(
+        apiConfig.endpoints.subscribe,
+        {
+          method: 'POST',
+          body: JSON.stringify({ email }),
+        }
+      );
+
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      if (response.data?.apiKey) {
         setApiKey(response.data.apiKey);
         toast({
           title: 'Success!',
@@ -45,10 +55,11 @@ const SubscriptionForm: React.FC = () => {
         });
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'An error occurred. Please try again.');
+      const errorMessage = err.message || 'An error occurred. Please try again.';
+      setError(errorMessage);
       toast({
         title: 'Error',
-        description: err.response?.data?.message || 'An error occurred. Please try again.',
+        description: errorMessage,
         status: 'error',
         duration: 5000,
         isClosable: true,
