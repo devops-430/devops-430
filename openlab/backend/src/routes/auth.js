@@ -2,8 +2,10 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/UserNew');
 const emailService = require('../services/emailService');
-const auth = require('../middleware/auth');
 const crypto = require('crypto');
+
+// In-memory storage for testing
+const users = new Map();
 
 // Verify API key
 router.post('/verify', async (req, res) => {
@@ -31,6 +33,10 @@ router.post('/verify', async (req, res) => {
 router.post('/subscribe', async (req, res) => {
   try {
     const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
 
     // Check if user already exists
     let user = await User.findOne({ email });
@@ -74,15 +80,19 @@ router.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ error: 'Email already registered' });
+      return res.status(400).json({ message: 'Email already registered' });
     }
 
     // Create new user
     const user = new User({
-      name,
+      name: name || email.split('@')[0],
       email,
       password
     });
@@ -97,7 +107,8 @@ router.post('/register', async (req, res) => {
       apiKey: user.apiKey
     });
   } catch (error) {
-    res.status(500).json({ error: 'Error registering user' });
+    console.error('Registration error:', error);
+    res.status(500).json({ message: 'Error registering user' });
   }
 });
 
@@ -109,13 +120,13 @@ router.post('/login', async (req, res) => {
     // Find user
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     // Update last login
@@ -127,33 +138,8 @@ router.post('/login', async (req, res) => {
       apiKey: user.apiKey
     });
   } catch (error) {
-    res.status(500).json({ error: 'Error logging in' });
-  }
-});
-
-// Get current user profile
-router.get('/profile', auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id).select('-password');
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ error: 'Error fetching profile' });
-  }
-});
-
-// Generate new API key
-router.post('/api-key', auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    user.generateApiKey();
-    await user.save();
-
-    res.json({
-      message: 'New API key generated successfully',
-      apiKey: user.apiKey
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Error generating API key' });
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Error logging in' });
   }
 });
 

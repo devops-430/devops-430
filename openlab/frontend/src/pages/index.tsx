@@ -18,7 +18,10 @@ import {
   useToast,
   Flex,
   Spinner,
+  Center,
+  Icon,
 } from '@chakra-ui/react';
+import { FaServer } from 'react-icons/fa';
 import { apiRequest } from '../utils/api';
 import apiConfig from '../config/api';
 
@@ -49,16 +52,16 @@ export default function HomePage() {
 
   const fetchResources = async () => {
     try {
-      const response = await apiRequest('GET', apiConfig.endpoints.resources);
-      setResources(response.data);
-    } catch (error) {
-      toast({
-        title: 'Error fetching resources',
-        description: 'Failed to load lab resources. Please try again.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+      const response = await apiRequest<LabResource[]>(apiConfig.endpoints.resources, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
+      setResources(response.data || []);
+    } catch (error) {
+      console.error('Error fetching resources:', error);
+      setResources([]);
     } finally {
       setLoading(false);
     }
@@ -111,9 +114,15 @@ export default function HomePage() {
   const handleCreate = async () => {
     setCreating(true);
     try {
-      await apiRequest('POST', apiConfig.endpoints.resources, {
-        name: `Lab-${Date.now()}`,
-        type: 'EC2',
+      await apiRequest<LabResource>(apiConfig.endpoints.resources, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: `Lab-${Date.now()}`,
+          type: 'EC2',
+        }),
       });
       toast({
         title: 'Resource created',
@@ -158,57 +167,80 @@ export default function HomePage() {
         </Button>
       </HStack>
 
-      <Box overflowX="auto">
-        <Table variant="simple">
-          <Thead>
-            <Tr>
-              <Th>Name</Th>
-              <Th>Type</Th>
-              <Th>Status</Th>
-              <Th>IP Address</Th>
-              <Th>Created At</Th>
-              <Th>Actions</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {resources.map((resource) => (
-              <Tr key={resource.id}>
-                <Td>{resource.name}</Td>
-                <Td>{resource.type}</Td>
-                <Td>
-                  <Text
-                    color={resource.status === 'running' ? 'green.500' : 'red.500'}
-                    fontWeight="bold"
-                  >
-                    {resource.status}
-                  </Text>
-                </Td>
-                <Td>{resource.ipAddress || '-'}</Td>
-                <Td>{new Date(resource.createdAt).toLocaleString()}</Td>
-                <Td>
-                  {resource.status === 'running' ? (
-                    <Button
-                      colorScheme="red"
-                      size="sm"
-                      onClick={() => handleStop(resource.id)}
-                    >
-                      Stop
-                    </Button>
-                  ) : (
-                    <Button
-                      colorScheme="green"
-                      size="sm"
-                      onClick={() => handleStart(resource.id)}
-                    >
-                      Start
-                    </Button>
-                  )}
-                </Td>
+      {resources.length === 0 ? (
+        <Box 
+          p={8} 
+          borderWidth={1} 
+          borderRadius="lg" 
+          borderStyle="dashed"
+          textAlign="center"
+        >
+          <Center flexDirection="column" py={8}>
+            <Icon as={FaServer} w={12} h={12} color="gray.400" mb={4} />
+            <Text fontSize="xl" color="gray.600" mb={2}>
+              No Lab Resources Available
+            </Text>
+            <Text color="gray.500" mb={4}>
+              Get started by creating your first lab resource
+            </Text>
+            <Button
+              colorScheme="blue"
+              onClick={handleCreate}
+              isLoading={creating}
+              loadingText="Creating..."
+            >
+              Create Your First Resource
+            </Button>
+          </Center>
+        </Box>
+      ) : (
+        <Box overflowX="auto">
+          <Table variant="simple">
+            <Thead>
+              <Tr>
+                <Th>Name</Th>
+                <Th>Type</Th>
+                <Th>Status</Th>
+                <Th>IP Address</Th>
+                <Th>Created At</Th>
+                <Th>Actions</Th>
               </Tr>
-            ))}
-          </Tbody>
-        </Table>
-      </Box>
+            </Thead>
+            <Tbody>
+              {resources.map((resource) => (
+                <Tr key={resource.id}>
+                  <Td>{resource.name}</Td>
+                  <Td>{resource.type}</Td>
+                  <Td>
+                    <Badge
+                      colorScheme={resource.status === 'running' ? 'green' : 'red'}
+                    >
+                      {resource.status}
+                    </Badge>
+                  </Td>
+                  <Td>{resource.ipAddress || '-'}</Td>
+                  <Td>{new Date(resource.createdAt).toLocaleString()}</Td>
+                  <Td>
+                    <Button
+                      colorScheme={resource.status === 'running' ? 'red' : 'green'}
+                      size="sm"
+                      onClick={() => {
+                        if (resource.status === 'running') {
+                          handleStop(resource.id);
+                        } else {
+                          handleStart(resource.id);
+                        }
+                      }}
+                    >
+                      {resource.status === 'running' ? 'Stop' : 'Start'}
+                    </Button>
+                  </Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        </Box>
+      )}
     </Container>
   );
 } 
