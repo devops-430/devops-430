@@ -12,7 +12,8 @@ import {
   Link,
 } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
-import axios from 'axios';
+import { apiRequest } from '../utils/api';
+import apiConfig from '../config/api';
 import Layout from '../components/Layout';
 
 export default function Login() {
@@ -26,24 +27,33 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:3001/api/auth/login', {
-        apiKey,
-      });
+      const response = await apiRequest<{ valid: boolean }>(
+        apiConfig.endpoints.verify,
+        {
+          method: 'POST',
+          body: JSON.stringify({ apiKey }),
+        }
+      );
 
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('userId', response.data.userId);
-      
-      toast({
-        title: 'Login successful',
-        status: 'success',
-        duration: 3000,
-      });
+      if (response.error) {
+        throw new Error(response.error);
+      }
 
-      router.push('/dashboard');
-    } catch (error) {
+      if (response.data?.valid) {
+        localStorage.setItem('apiKey', apiKey);
+        toast({
+          title: 'Login successful',
+          status: 'success',
+          duration: 3000,
+        });
+        router.push('/');
+      } else {
+        throw new Error('Invalid API key');
+      }
+    } catch (error: any) {
       toast({
         title: 'Login failed',
-        description: 'Invalid API key',
+        description: error.message || 'Invalid API key',
         status: 'error',
         duration: 3000,
       });
@@ -54,50 +64,37 @@ export default function Login() {
 
   return (
     <Layout>
-      <Box
-        maxW="md"
-        mx="auto"
-        p={8}
-        borderWidth={1}
-        borderRadius="lg"
-        boxShadow="lg"
-        bg="white"
-      >
-        <VStack spacing={4} align="stretch">
-          <Heading textAlign="center">OpenLab Login</Heading>
-          <Text textAlign="center" color="gray.600">
-            Enter your API key to access the lab management system
-          </Text>
-          
-          <form onSubmit={handleLogin}>
+      <Box maxW="md" mx="auto" mt={8} p={6} borderWidth={1} borderRadius="lg">
+        <VStack spacing={4}>
+          <Heading>Login</Heading>
+          <Text>Enter your API key to continue</Text>
+          <form onSubmit={handleLogin} style={{ width: '100%' }}>
             <VStack spacing={4}>
               <FormControl isRequired>
                 <FormLabel>API Key</FormLabel>
                 <Input
-                  type="password"
+                  type="text"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                   placeholder="Enter your API key"
                 />
               </FormControl>
-              
               <Button
                 type="submit"
                 colorScheme="blue"
-                width="full"
+                width="100%"
                 isLoading={isLoading}
               >
                 Login
               </Button>
-
-              <Text textAlign="center" fontSize="sm" color="gray.600">
-                Don't have an API key?{' '}
-                <Link color="blue.500" href="/subscribe">
-                  Subscribe here
-                </Link>
-              </Text>
             </VStack>
           </form>
+          <Text>
+            Don't have an API key?{' '}
+            <Link href="/subscribe" color="blue.500">
+              Subscribe here
+            </Link>
+          </Text>
         </VStack>
       </Box>
     </Layout>

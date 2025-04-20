@@ -5,6 +5,7 @@ interface ApiConfig {
     login: string;
     register: string;
     verify: string;
+    resources: string;
   };
 }
 
@@ -15,6 +16,7 @@ const apiConfig: ApiConfig = {
     login: '/auth/login',
     register: '/auth/register',
     verify: '/auth/verify',
+    resources: '/resources',
   },
 };
 

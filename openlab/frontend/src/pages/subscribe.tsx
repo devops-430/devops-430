@@ -12,7 +12,8 @@ import {
   Link,
 } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
-import axios from 'axios';
+import { apiRequest } from '../utils/api';
+import apiConfig from '../config/api';
 import Layout from '../components/Layout';
 
 export default function Subscribe() {
@@ -26,9 +27,17 @@ export default function Subscribe() {
     setIsLoading(true);
 
     try {
-      await axios.post('http://localhost:3001/api/auth/subscribe', {
-        email,
-      });
+      const response = await apiRequest<{ message: string }>(
+        apiConfig.endpoints.subscribe,
+        {
+          method: 'POST',
+          body: JSON.stringify({ email }),
+        }
+      );
+
+      if (response.error) {
+        throw new Error(response.error);
+      }
 
       toast({
         title: 'Subscription successful',
@@ -41,10 +50,10 @@ export default function Subscribe() {
       setTimeout(() => {
         router.push('/login');
       }, 2000);
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'Subscription failed',
-        description: 'Please try again later',
+        description: error.message || 'Please try again later',
         status: 'error',
         duration: 3000,
       });
@@ -55,22 +64,11 @@ export default function Subscribe() {
 
   return (
     <Layout>
-      <Box
-        maxW="md"
-        mx="auto"
-        p={8}
-        borderWidth={1}
-        borderRadius="lg"
-        boxShadow="lg"
-        bg="white"
-      >
-        <VStack spacing={4} align="stretch">
-          <Heading textAlign="center">Subscribe to OpenLab</Heading>
-          <Text textAlign="center" color="gray.600">
-            Enter your email to receive an API key
-          </Text>
-          
-          <form onSubmit={handleSubscribe}>
+      <Box maxW="md" mx="auto" mt={8} p={6} borderWidth={1} borderRadius="lg">
+        <VStack spacing={4}>
+          <Heading>Subscribe to OpenLab</Heading>
+          <Text>Enter your email to receive an API key</Text>
+          <form onSubmit={handleSubscribe} style={{ width: '100%' }}>
             <VStack spacing={4}>
               <FormControl isRequired>
                 <FormLabel>Email</FormLabel>
@@ -81,24 +79,22 @@ export default function Subscribe() {
                   placeholder="Enter your email"
                 />
               </FormControl>
-              
               <Button
                 type="submit"
                 colorScheme="blue"
-                width="full"
+                width="100%"
                 isLoading={isLoading}
               >
                 Subscribe
               </Button>
-
-              <Text textAlign="center" fontSize="sm" color="gray.600">
-                Already have an API key?{' '}
-                <Link color="blue.500" href="/login">
-                  Login here
-                </Link>
-              </Text>
             </VStack>
           </form>
+          <Text>
+            Already have an API key?{' '}
+            <Link href="/login" color="blue.500">
+              Login here
+            </Link>
+          </Text>
         </VStack>
       </Box>
     </Layout>
