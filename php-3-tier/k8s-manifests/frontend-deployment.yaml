@@ -27,9 +27,10 @@ spec:
         ports:
         - containerPort: 80
         volumeMounts:
-        - name: frontend-files
+        - name: frontend
           mountPath: /usr/local/apache2/htdocs
       volumes:
-      - name: frontend-files
-        configMap:
-          name: frontend-files 
+      - name: frontend
+        hostPath:
+          path: /home/ubuntu/devops-430/php-3-tier/frontend
+          type: DirectoryOrCreate

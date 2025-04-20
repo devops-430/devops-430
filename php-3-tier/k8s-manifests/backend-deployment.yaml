@@ -26,31 +26,11 @@ spec:
             cpu: "200m"
         ports:
         - containerPort: 80
-        env:
-        - name: DB_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: backend-config
-              key: DB_HOST
-        - name: DB_USER
-          valueFrom:
-            secretKeyRef:
-              name: db-credentials
-              key: username
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: db-credentials
-              key: password
-        - name: DB_NAME
-          valueFrom:
-            configMapKeyRef:
-              name: backend-config
-              key: DB_NAME
         volumeMounts:
-        - name: backend-files
+        - name: backend
           mountPath: /var/www/html
       volumes:
-      - name: backend-files
-        configMap:
-          name: backend-files 
+      - name: backend
+        hostPath:
+          path: /home/ubuntu/devops-430/php-3-tier/api
+          type: DirectoryOrCreate

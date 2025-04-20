@@ -49,5 +49,6 @@ spec:
           mountPath: /docker-entrypoint-initdb.d
       volumes:
       - name: mysql-init
-        configMap:
-          name: mysql-init 
+        hostPath:
+          path: /home/ubuntu/devops-430/php-3-tier/db
+          type: DirectoryOrCreate
