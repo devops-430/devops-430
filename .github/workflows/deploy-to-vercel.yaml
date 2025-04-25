@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - "openlab"
+    
+permissions:
+  contents: read
+  deployments: write
 
 jobs:
   Deploy-Preview:
