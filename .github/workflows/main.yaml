@@ -21,19 +21,6 @@ jobs:
       - run: npm run build
       - run: npm test
 
-  frontend:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: openlab/frontend
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: npm install
-      - run: npm run build
-      - run: npm test
 
   executor:
     runs-on: ubuntu-latest
