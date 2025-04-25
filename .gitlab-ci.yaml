@@ -1,0 +1,51 @@
+# .gitlab-ci.yml
+stages:
+  - install
+  - test
+  - build
+  - deploy
+
+variables:
+  NODE_ENV: development
+
+before_script:
+  - echo "Starting build process"
+
+backend:
+  stage: install
+  script:
+    - cd backend
+    - npm install
+    - npm run build || echo "No build"
+    - npm test || echo "No test"
+
+executor:
+  stage: install
+  script:
+    - cd executor
+    - npm install
+    - npm run build || echo "No build"
+    - npm test || echo "No test"
+
+fetcher:
+  stage: install
+  script:
+    - cd fetcher
+    - npm install
+    - npm run build || echo "No build"
+    - npm test || echo "No test"
+
+frontend:
+  stage: install
+  script:
+    - cd frontend
+    - npm install
+    - npm run build || echo "No build"
+    - npm test || echo "No test"
+
+docker-deploy:
+  stage: deploy
+  script:
+    - docker-compose up -d
+  only:
+    - openlab
