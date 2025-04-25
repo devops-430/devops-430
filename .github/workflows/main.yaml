@@ -7,38 +7,67 @@ on:
     branches: [openlab]
 
 jobs:
-  build-test:
+  backend:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [backend, executor, fetcher, frontend]
-
+    defaults:
+      run:
+        working-directory: openlab/backend
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - run: npm install
+      - run: npm run build
+      - run: npm test
 
-      - name: Install, Build, and Test
-        working-directory: ./openlab/${{ matrix.service }}
-        run: |
-          npm install
-          npm run build || echo "No build script for ${{ matrix.service }}"
-          npm test || echo "No tests for ${{ matrix.service }}"
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: openlab/frontend
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm run build
+      - run: npm test
+
+  executor:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: openlab/executor
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - run: pip install -r requirements.txt
+      - run: pytest || echo "No tests for executor"
+
+  fetcher:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: openlab/fetcher
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - run: go mod tidy
+      - run: go build ./...
+      - run: go test ./... || echo "No tests for fetcher"
 
   docker-compose-up:
-    needs: build-test
+    needs: [backend, frontend, executor, fetcher]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - uses: actions/checkout@v3
+      - uses: docker/setup-buildx-action@v3
+      - run: docker-compose up -d
 
-      - name: Docker Compose Up
-        run: |
-          docker-compose up -d
