@@ -15,7 +15,7 @@ app = FastAPI(title="OpenLab Executor Service")
 aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
 aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
 aws_region = os.getenv("AWS_REGION", "us-east-1")
-backend_url = os.getenv("BACKEND_API_URL", "http://localhost:3001")
+backend_url = os.getenv("BACKEND_API_URL", "http://localhost:3000")
 
 # Initialize AWS clients
 ec2_client = boto3.client(
@@ -116,4 +116,4 @@ async def get_machine_status(instance_id: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    uvicorn.run(app, host="0.0.0.0", port=5000) 
