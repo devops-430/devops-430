@@ -23,7 +23,7 @@ jobs:
           node-version: 22
 
       - name: Install, Build, and Test
-        working-directory: ./openlab${{ matrix.service }}
+        working-directory: ./openlab/${{ matrix.service }}
         run: |
           npm install
           npm run build || echo "No build script for ${{ matrix.service }}"
