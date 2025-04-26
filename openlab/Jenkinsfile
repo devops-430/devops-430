@@ -9,7 +9,7 @@ pipeline {
    stages {
         stage('Checkout') {
             steps {
-                git branch: 'openlab', url: 'https://github.com/devops-new-world/openlabfree/openlab.git'
+                git branch: 'openlab', url: 'https://github.com/devops-new-world/openlabfree.git'
                 dir('openlabfree/openlab') {
                     sh 'pwd' 
                 }
