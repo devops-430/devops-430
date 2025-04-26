@@ -6,7 +6,29 @@ pipeline {
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
         AWS_REGION= credentials('aws-region')
     }
-    stages {
+   stages {
+        stage('Setup Environment') {
+            steps {
+                sh '''
+                    if ! command -v npm &> /dev/null; then
+                        sudo apt update
+                        sudo apt install -y nodejs npm
+                    fi
+
+                    if ! command -v go &> /dev/null; then
+                        wget https://go.dev/dl/go1.21.9.linux-amd64.tar.gz
+                        sudo tar -C /usr/local -xzf go1.21.9.linux-amd64.tar.gz
+                        export PATH=$PATH:/usr/local/go/bin
+                        echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+                    fi
+
+                    if ! command -v pip3 &> /dev/null; then
+                        sudo apt install -y python3 python3-pip
+                    fi
+                    pip3 install pytest
+                '''
+            }
+        }
         stage('Checkout') {
             steps {
                 git branch: 'openlab', url: 'https://github.com/devops-new-world/openlabfree/openlab.git'
@@ -83,10 +105,6 @@ pipeline {
         }
     }
     post {
-        always {
-            echo 'cleaning workspace'
-            cleanWs()
-        }
         success {
             echo 'Pipeline succeeded!'
         }
