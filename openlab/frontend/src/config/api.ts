@@ -10,13 +10,13 @@ interface ApiConfig {
 }
 
 const apiConfig: ApiConfig = {
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://openlab.nnine.training',
   endpoints: {
-    subscribe: '/auth/subscribe',
-    login: '/auth/login',
-    register: '/auth/register',
-    verify: '/auth/verify',
-    resources: '/resources',
+    subscribe: '/api/auth/subscribe',
+    login: '/api/auth/login',
+    register: '/api//auth/register',
+    verify: '/api/auth/verify',
+    resources: '/api/resources',
   },
 };
 
