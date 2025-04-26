@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # frontend:
   #   build: ./frontend
   #   ports:
   #     - "3000:3000"
@@ -13,6 +12,7 @@ services:
 
   backend:
     build: ./backend
+    network_mode: bridge
     ports:
       - "3000:3000"
     # environment:
@@ -23,6 +23,7 @@ services:
 
   executor:
     build: ./executor
+    network_mode: bridge
     ports:
       - "5000:5000"
     environment:
@@ -35,6 +36,7 @@ services:
 
   fetcher:
     build: ./fetcher
+    network_mode: bridge
     environment:
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
@@ -45,6 +47,7 @@ services:
 
   mongodb:
     image: mongo:latest
+    network_mode: bridge
     ports:
       - "27017:27017"
     volumes:
