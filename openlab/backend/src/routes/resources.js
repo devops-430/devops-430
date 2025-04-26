@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // GET /api/resources
-router.get('/', async (req, res) => {
+router.get('/resources', async (req, res) => {
   try {
     // Return an empty array instead of an error
     res.json([]);
