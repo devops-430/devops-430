@@ -22,7 +22,18 @@ import {
   Icon,
   IconButton,
   Tooltip,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  FormControl,
+  FormLabel,
+  Input,
 } from '@chakra-ui/react';
+import { useDisclosure } from '@chakra-ui/react';
 import { FaServer, FaPlus, FaPowerOff, FaPlay, FaStop } from 'react-icons/fa';
 import { apiRequest } from '../utils/api';
 import apiConfig from '../config/api';
@@ -42,6 +53,11 @@ export default function HomePage() {
   const [resources, setResources] = useState<LabResource[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [newResourceName, setNewResourceName] = useState('');
+  const [newResourceType, setNewResourceType] = useState('');
+
 
   useEffect(() => {
     const apiKey = localStorage.getItem('apiKey');
@@ -135,6 +151,16 @@ export default function HomePage() {
   };
 
   const handleCreate = async () => {
+    if (!newResourceName || !newResourceType) {
+      toast({
+        title: 'Missing Information',
+        description: 'Please enter both name and type.',
+        status: 'warning',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
     setCreating(true);
     try {
       await apiRequest<LabResource>(apiConfig.endpoints.resources, {
@@ -143,8 +169,10 @@ export default function HomePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: `Lab-${Date.now()}`,
-          type: 'EC2',
+          name: newResourceName,
+          type: newResourceType,
+          // name: `Lab-${Date.now()}`,
+          // type: 'EC2',
         }),
       });
       toast({
@@ -155,6 +183,9 @@ export default function HomePage() {
         isClosable: true,
       });
       fetchResources();
+      onClose(); // close the modal after creating
+      setNewResourceName('');
+      setNewResourceType('');
     } catch (error) {
       toast({
         title: 'Error creating resource',
@@ -192,7 +223,7 @@ export default function HomePage() {
               <Tooltip label="Create New Resource" placement="top">
                 <Button
                   colorScheme="blue"
-                  onClick={handleCreate}
+                  onClick={onOpen}
                   isLoading={creating}
                   loadingText="Creating..."
                   leftIcon={<FaPlus />}
@@ -312,6 +343,41 @@ export default function HomePage() {
           )}
         </Box>
       </Container>
+    {/* Modal for creating new resource */}
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>Create New Resource</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody pb={6}>
+          <FormControl isRequired>
+            <FormLabel>Resource Name</FormLabel>
+            <Input
+              placeholder="Enter resource name"
+              value={newResourceName}
+              onChange={(e) => setNewResourceName(e.target.value)}
+            />
+          </FormControl>
+
+          <FormControl mt={4} isRequired>
+            <FormLabel>Resource Type</FormLabel>
+            <Input
+              placeholder="Enter resource type (e.g., EC2)"
+              value={newResourceType}
+              onChange={(e) => setNewResourceType(e.target.value)}
+            />
+          </FormControl>
+        </ModalBody>
+
+        <ModalFooter>
+          <Button colorScheme="blue" mr={3} onClick={handleCreate} isLoading={creating}>
+            Create
+          </Button>
+          <Button onClick={onClose}>Cancel</Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+
     </Box>
   );
 } 
