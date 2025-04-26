@@ -46,7 +46,7 @@ export default function CreateMachine() {
       const userId = localStorage.getItem('userId');
 
       await axios.post(
-        'http://localhost:8000/create',
+        'http://localhost:5000/create',
         {
           name,
           instance_type: instanceType,

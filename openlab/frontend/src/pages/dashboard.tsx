@@ -44,7 +44,7 @@ export default function Dashboard() {
   const fetchMachines = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:3001/api/machines', {
+      const response = await axios.get('http://localhost:3000/api/machines', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMachines(response.data);
@@ -63,7 +63,7 @@ export default function Dashboard() {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `http://localhost:8000/start/${instanceId}`,
+        `http://localhost:5000/start/${instanceId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -86,7 +86,7 @@ export default function Dashboard() {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `http://localhost:8000/stop/${instanceId}`,
+        `http://localhost:5000/stop/${instanceId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
