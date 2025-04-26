@@ -3,8 +3,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
-const resourcesRoutes = require('./routes/resources');
-const path = require('path');
+const resourceRoutes = require('./routes/resources');
+const QueueExecutor = require('../../executor/QueueExecutor');
 
 // Log environment variables (excluding sensitive data)
 console.log('Environment variables loaded:');
@@ -36,8 +36,6 @@ const connectDB = async () => {
     }
     
     console.log('Attempting to connect to MongoDB...');
-    console.log('Connection string:', process.env.MONGODB_URI);
-    
     await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true
@@ -45,13 +43,13 @@ const connectDB = async () => {
     console.log('Successfully connected to MongoDB');
   } catch (error) {
     console.error('MongoDB connection error:', error.message);
-    process.exit(1); // Exit if database connection fails
+    process.exit(1);
   }
 };
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/resources', resourcesRoutes);
+app.use('/api/resources', resourceRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -61,8 +59,13 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 
-// Start server only after database connection
+// Start server and queue executor
 connectDB().then(() => {
+  // Start the queue executor
+  QueueExecutor.start();
+  console.log('Queue executor started');
+
+  // Start the server
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });

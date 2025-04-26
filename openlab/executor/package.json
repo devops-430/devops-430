@@ -1,0 +1,13 @@
+{
+  "name": "openlab-executor",
+  "version": "1.0.0",
+  "description": "OpenLab Executor Service",
+  "main": "QueueExecutor.js",
+  "scripts": {
+    "start": "node QueueExecutor.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "dotenv": "^16.4.1"
+  }
+} 

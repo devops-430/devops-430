@@ -1,15 +1,26 @@
 const express = require('express');
 const router = express.Router();
+const ResourceController = require('../controllers/ResourceController');
 
-// GET /api/resources
-router.get('/', async (req, res) => {
-  try {
-    // Return an empty array instead of an error
-    res.json([]);
-  } catch (error) {
-    console.error('Error fetching resources:', error);
-    res.status(500).json({ message: 'Error fetching resources' });
-  }
-});
+// GET all resources
+router.get('/', ResourceController.getResources);
+
+// GET single resource
+router.get('/:resourceId', ResourceController.getResource);
+
+// POST create new resource
+router.post('/', ResourceController.createResource);
+
+// POST start resource
+router.post('/:resourceId/start', ResourceController.startResource);
+
+// POST stop resource
+router.post('/:resourceId/stop', ResourceController.stopResource);
+
+// POST restart resource
+router.post('/:resourceId/restart', ResourceController.restartResource);
+
+// DELETE resource
+router.delete('/:resourceId', ResourceController.deleteResource);
 
 module.exports = router; 
