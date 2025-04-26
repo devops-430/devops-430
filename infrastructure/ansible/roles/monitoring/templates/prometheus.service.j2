@@ -1,0 +1,17 @@
+[Unit]
+Description=Prometheus
+Documentation=https://prometheus.io/docs/introduction/overview/
+After=network-online.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/opt/prometheus/prometheus-2.45.0.linux-amd64/prometheus \
+    --config.file=/opt/prometheus/prometheus-2.45.0.linux-amd64/prometheus.yml \
+    --storage.tsdb.path=/opt/prometheus/data \
+    --web.console.templates=/opt/prometheus/prometheus-2.45.0.linux-amd64/consoles \
+    --web.console.libraries=/opt/prometheus/prometheus-2.45.0.linux-amd64/console_libraries
+Restart=always
+
+[Install]
+WantedBy=multi-user.target 

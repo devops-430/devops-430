@@ -1,0 +1,65 @@
+---
+- name: Add Jenkins repository key
+  apt_key:
+    url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+    state: present
+
+- name: Add Jenkins repository
+  apt_repository:
+    repo: deb https://pkg.jenkins.io/debian-stable binary/
+    state: present
+    filename: jenkins
+
+- name: Install Jenkins
+  apt:
+    name: jenkins
+    state: present
+    update_cache: yes
+
+- name: Start and enable Jenkins service
+  systemd:
+    name: jenkins
+    state: started
+    enabled: yes
+
+- name: Wait for Jenkins to start
+  uri:
+    url: http://localhost:8080
+    status_code: 200
+  register: result
+  until: result.status == 200
+  retries: 30
+  delay: 10
+
+- name: Get Jenkins initial admin password
+  shell: cat /var/lib/jenkins/secrets/initialAdminPassword
+  register: jenkins_admin_password
+
+- name: Install required Jenkins plugins
+  jenkins_plugin:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - docker-plugin
+    - docker-workflow
+    - pipeline-model-definition
+    - git
+    - credentials
+    - ssh-agent
+    - kubernetes
+    - workflow-aggregator
+  notify: restart jenkins
+
+- name: Create Jenkins agent user
+  user:
+    name: jenkins-agent
+    shell: /bin/bash
+    home: /home/jenkins-agent
+    state: present
+
+- name: Generate SSH key for Jenkins agent
+  command: ssh-keygen -t rsa -b 4096 -f /home/jenkins-agent/.ssh/id_rsa -N ""
+  args:
+    creates: /home/jenkins-agent/.ssh/id_rsa
+  become: yes
+  become_user: jenkins-agent 

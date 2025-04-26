@@ -1,0 +1,36 @@
+---
+- name: Install Vagrant dependencies
+  apt:
+    name:
+      - virtualbox
+      - virtualbox-dkms
+    state: present
+    update_cache: yes
+
+- name: Download Vagrant
+  get_url:
+    url: "https://releases.hashicorp.com/vagrant/2.3.7/vagrant_2.3.7_linux_amd64.zip"
+    dest: "/tmp/vagrant.zip"
+    mode: '0755'
+
+- name: Install unzip
+  apt:
+    name: unzip
+    state: present
+
+- name: Extract Vagrant
+  unarchive:
+    src: /tmp/vagrant.zip
+    dest: /usr/local/bin
+    remote_src: yes
+
+- name: Clean up Vagrant zip
+  file:
+    path: /tmp/vagrant.zip
+    state: absent
+
+- name: Install Vagrant Docker plugin
+  command: vagrant plugin install vagrant-docker-compose
+  args:
+    creates: "{{ ansible_env.HOME }}/.vagrant.d/plugins.json"
+  become: false 

@@ -1,0 +1,61 @@
+---
+- name: Create monitoring directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  with_items:
+    - /opt/prometheus
+    - /opt/grafana
+    - /opt/prometheus/data
+    - /opt/grafana/data
+
+- name: Download Prometheus
+  get_url:
+    url: https://github.com/prometheus/prometheus/releases/download/v2.45.0/prometheus-2.45.0.linux-amd64.tar.gz
+    dest: /tmp/prometheus.tar.gz
+    mode: '0644'
+
+- name: Extract Prometheus
+  unarchive:
+    src: /tmp/prometheus.tar.gz
+    dest: /opt/prometheus
+    remote_src: yes
+
+- name: Create Prometheus systemd service
+  template:
+    src: prometheus.service.j2
+    dest: /etc/systemd/system/prometheus.service
+    mode: '0644'
+
+- name: Start and enable Prometheus
+  systemd:
+    name: prometheus
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: Download Grafana
+  get_url:
+    url: https://dl.grafana.com/enterprise/release/grafana-enterprise-10.0.3.linux-amd64.tar.gz
+    dest: /tmp/grafana.tar.gz
+    mode: '0644'
+
+- name: Extract Grafana
+  unarchive:
+    src: /tmp/grafana.tar.gz
+    dest: /opt/grafana
+    remote_src: yes
+
+- name: Create Grafana systemd service
+  template:
+    src: grafana.service.j2
+    dest: /etc/systemd/system/grafana.service
+    mode: '0644'
+
+- name: Start and enable Grafana
+  systemd:
+    name: grafana
+    state: started
+    enabled: yes
+    daemon_reload: yes 

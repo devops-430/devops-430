@@ -1,0 +1,12 @@
+---
+- name: Configure infrastructure
+  hosts: all
+  become: true
+  roles:
+    - docker
+    - vagrant
+    - jenkins
+    - k3s
+    - monitoring
+    - databases
+    - nginx 
