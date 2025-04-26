@@ -14,7 +14,7 @@ const apiConfig: ApiConfig = {
   endpoints: {
     subscribe: '/api/auth/subscribe',
     login: '/api/auth/login',
-    register: '/api//auth/register',
+    register: '/api/auth/register',
     verify: '/api/auth/verify',
     resources: '/api/resources',
   },
