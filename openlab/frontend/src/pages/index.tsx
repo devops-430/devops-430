@@ -343,40 +343,40 @@ export default function HomePage() {
           )}
         </Box>
       </Container>
-    {/* Modal for creating new resource */}
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>Create New Resource</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody pb={6}>
-          <FormControl isRequired>
-            <FormLabel>Resource Name</FormLabel>
-            <Input
-              placeholder="Enter resource name"
-              value={newResourceName}
-              onChange={(e) => setNewResourceName(e.target.value)}
-            />
-          </FormControl>
+     {/* Modal for creating new resource */}
+     <Modal isOpen={isOpen} onClose={onClose}>
+       <ModalOverlay />
+       <ModalContent>
+         <ModalHeader>Create New Resource</ModalHeader>
+         <ModalCloseButton />
+         <ModalBody pb={6}>
+           <FormControl isRequired>
+             <FormLabel>Resource Name</FormLabel>
+             <Input
+               placeholder="Enter resource name"
+               value={newResourceName}
+               onChange={(e) => setNewResourceName(e.target.value)}
+             />
+           </FormControl>
+ 
+           <FormControl mt={4} isRequired>
+             <FormLabel>Resource Type</FormLabel>
+             <Input
+               placeholder="Enter resource type (e.g., EC2)"
+               value={newResourceType}
+               onChange={(e) => setNewResourceType(e.target.value)}
+             />
+           </FormControl>
+         </ModalBody>
 
-          <FormControl mt={4} isRequired>
-            <FormLabel>Resource Type</FormLabel>
-            <Input
-              placeholder="Enter resource type (e.g., EC2)"
-              value={newResourceType}
-              onChange={(e) => setNewResourceType(e.target.value)}
-            />
-          </FormControl>
-        </ModalBody>
-
-        <ModalFooter>
-          <Button colorScheme="blue" mr={3} onClick={handleCreate} isLoading={creating}>
-            Create
-          </Button>
-          <Button onClick={onClose}>Cancel</Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+         <ModalFooter>
+           <Button colorScheme="blue" mr={3} onClick={handleCreate} isLoading={creating}>
+             Create
+           </Button>
+           <Button onClick={onClose}>Cancel</Button>
+         </ModalFooter>
+       </ModalContent>
+     </Modal>
 
     </Box>
   );
