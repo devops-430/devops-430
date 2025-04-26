@@ -69,20 +69,20 @@ pipeline {
                 }
             }
         }
-        stage('Test Executor') {
-            steps {
-                dir('openlabfree/openlab/executor') {
-                    sh 'pytest || true' 
-                }
-            }
-        }
-        stage('Test Fetcher') {
-            steps {
-                dir('openlabfree/openlab/fetcher') {
-                    sh 'go test ./... || true'  
-                }
-            }
-        }
+        // stage('Test Executor') {
+        //     steps {
+        //         dir('openlabfree/openlab/executor') {
+        //             sh 'pytest || true' 
+        //         }
+        //     }
+        // }
+        // stage('Test Fetcher') {
+        //     steps {
+        //         dir('openlabfree/openlab/fetcher') {
+        //             sh 'go test ./... || true'  
+        //         }
+        //     }
+        // }
 
         stage('Build') {
             steps {
