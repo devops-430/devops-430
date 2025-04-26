@@ -26,7 +26,7 @@ const nextConfig = {
     return [
       {
         source: '/auth/:path*',
-        destination: 'http://localhost:3000/api/auth/:path*',
+        destination: 'https://openlab.nnine.training/api/auth/:path*',
       },
     ];
   },
