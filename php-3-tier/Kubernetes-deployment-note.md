@@ -121,3 +121,50 @@ After completing the above steps, test your setup:
 
 - Accessing `http://your-domain/api/endpoint` should internally rewrite to `http://your-domain/endpoint`, allowing your backend application to process the request correctly.
 
+Got it —  
+I'll **fix your YAML** to properly **strip `/api` inside Ingress** without changing too much.
+
+Here’s your **corrected version**:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress
+  namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /api/(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: backend
+            port:
+              number: 80
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 80
+```
+
+---
+
+✅ **Changes I made:**
+- `rewrite-target: /$1` (not `$2` anymore)
+- path `/api/(.*)` (regex match everything after `/api/`)
+- pathType: `ImplementationSpecific` for proper regex support
+
+---
+
+Now:
+- You call `http://your-ip/api/hello` → backend gets `/hello`
+- You call `http://your-ip/api/v1/users` → backend sees `/v1/users`
+- **No `/api`** reaches Apache/backend anymore.
+
