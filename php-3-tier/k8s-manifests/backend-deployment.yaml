@@ -32,5 +32,5 @@ spec:
       volumes:
       - name: backend
         hostPath:
-          path: /home/ubuntu/devops-430/php-3-tier/api
+          path: /home/ubuntu/openlabfree/php-3-tier/api
           type: DirectoryOrCreate

@@ -32,5 +32,5 @@ spec:
       volumes:
       - name: frontend
         hostPath:
-          path: /home/ubuntu/devops-430/php-3-tier/frontend
+          path: /home/ubuntu/openlabfree/php-3-tier/frontend
           type: DirectoryOrCreate
