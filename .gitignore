@@ -44,3 +44,6 @@ coverage/
 *.pem
 .vercel openlab/frontend/node_modules
 openlab/backend/node_modules
+**/**/.terraform
+**/**/terraform.*
+**/**/.terraform.*

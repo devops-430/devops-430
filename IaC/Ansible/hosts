@@ -1,0 +1,6 @@
+[all]
+localhost ansible_connection=local
+[db]
+34.228.24.168 mysql_port=3307
+34.202.161.192
+34.203.240.174
