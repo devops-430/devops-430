@@ -503,6 +503,259 @@ git config gc.pruneExpire "1.day.ago"
 
 ---
 
+## 🎯 Goal:
+You want to temporarily **save uncommitted changes** while switching branches or doing another task, and later **restore** them.
+
+---
+
+## 🧪 Scenario:
+
+You’re working on a file `index.js` in the `feature-login` branch, but need to switch to `main` quickly without committing.
+
+---
+
+### 🔨 1. Modify a File
+
+```bash
+echo "// in progress" >> index.js
+```
+
+Now `git status` shows:
+```bash
+modified: index.js
+```
+
+---
+
+### 📦 2. Stash the Changes
+
+```bash
+git stash
+```
+
+Output:
+```
+Saved working directory and index state WIP on feature-login: abc1234 Add login page
+```
+
+Your working directory is now clean:
+```bash
+git status
+# On branch feature-login
+# nothing to commit, working tree clean
+```
+
+---
+
+### 🔀 3. Switch Branch
+
+```bash
+git checkout main
+```
+
+Do whatever you need in `main`.
+
+---
+
+### 🔙 4. Switch Back and Pop the Stash
+
+```bash
+git checkout feature-login
+git stash pop
+```
+
+Output:
+```
+On branch feature-login
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  modified:   index.js
+Dropped refs/stash@{0} (abc1234)
+```
+
+Your changes are now **restored**, and the stash is **removed**.
+
+---
+
+## ✅ Summary of Commands
+
+```bash
+# Save changes
+git stash
+
+# View stashed changes (optional)
+git stash list
+
+# Restore changes and delete stash
+git stash pop
+
+# Restore without deleting (optional)
+git stash apply
+```
+
+---
+
+## 🧪 Scenario: Multiple Stashes
+
+You're working on multiple features, and you stash changes at different points:
+
+---
+
+### 🔨 1. Make First Change and Stash It
+
+```bash
+echo "Feature A" >> a.js
+git stash
+```
+
+---
+
+### 🔨 2. Make Second Change and Stash It
+
+```bash
+echo "Feature B" >> b.js
+git stash
+```
+
+---
+
+### 👀 3. Check the Stash List
+
+```bash
+git stash list
+```
+
+Example output:
+```
+stash@{0}: WIP on main: abc1234 Add b.js changes
+stash@{1}: WIP on main: def5678 Add a.js changes
+```
+
+---
+
+### 🎯 4. Apply a Specific Stash (e.g., `stash@{1}`)
+
+```bash
+git stash apply stash@{1}
+```
+
+🔎 This restores the `a.js` changes **without deleting** the stash.
+
+---
+
+### 🗑 5. Drop That Stash After Applying
+
+```bash
+git stash drop stash@{1}
+```
+
+Or apply **and delete** in one go:
+
+```bash
+git stash pop stash@{1}
+```
+
+(⚠️ This may change numbering of other stashes.)
+
+---
+
+### 🧹 6. Clear All Stashes (Optional)
+
+```bash
+git stash clear
+```
+
+---
+
+## ✅ Summary of Numbered Stash Usage
+
+| Command                       | Purpose                                  |
+|------------------------------|------------------------------------------|
+| `git stash list`             | View all stashes                         |
+| `git stash apply stash@{N}`  | Apply a specific stash (keeps it)        |
+| `git stash pop stash@{N}`    | Apply and remove a specific stash        |
+| `git stash drop stash@{N}`   | Delete a specific stash                  |
+| `git stash clear`            | Delete all stashes                       |
+
+
+By default, `git stash` **does not include untracked files**, but you can include them using an extra option.
+
+---
+
+## 🎯 Goal:
+Stash both **modified** and **untracked** files, then restore them later.
+
+---
+
+## 🔧 Example: Stash Including Untracked Files
+
+### 🧪 1. Create Modified and Untracked Files
+
+```bash
+echo "Some change" >> tracked.js         # already tracked file
+echo "Untracked file content" > temp.txt # new untracked file
+```
+
+Check status:
+```bash
+git status
+```
+Output:
+```
+modified:   tracked.js
+Untracked files:
+  temp.txt
+```
+
+---
+
+### 📦 2. Stash Including Untracked Files
+
+```bash
+git stash push -u
+```
+
+✅ The `-u` or `--include-untracked` flag tells Git to stash untracked files too.
+
+Now run:
+```bash
+git stash list
+```
+
+You’ll see:
+```
+stash@{0}: WIP on main: abc1234 some commit message
+```
+
+Check status:
+```bash
+git status
+# Clean working directory
+```
+
+---
+
+### 🔙 3. Restore the Stashed Changes
+
+```bash
+git stash pop
+```
+
+This restores both:
+- Changes to `tracked.js`
+- The untracked file `temp.txt`
+
+---
+
+## ✅ Summary
+
+| Command                               | Description                                |
+|----------------------------------------|--------------------------------------------|
+| `git stash push -u`                   | Stash modified and **untracked** files     |
+| `git stash push -a`                   | Stash **all**, including ignored files     |
+| `git stash pop`                       | Restore and delete latest stash            |
+| `git stash apply stash@{N}`          | Restore a specific stash (keep it)         |
+
 
 ## References
 1. https://git-scm.com/book/en/v2/Git-Internals-Git-Objects
