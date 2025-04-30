@@ -101,3 +101,60 @@ kubectl apply -f middleware.yaml
 kubectl apply -f ingress.yaml
 ```
 
+
+```
+error: resource mapping not found for name: "stripprefix" namespace: "default" from "middleware.yaml": no matches for kind "Middleware" in version "traefik.containo.us/v1alpha1"
+ensure CRDs are installed first
+```
+
+indicates that the **Traefik Custom Resource Definitions (CRDs)** for `Middleware` are **not installed** in your Kubernetes cluster.
+
+### ✅ How to Fix It
+
+You need to install the Traefik CRDs. Here’s how you can do it:
+
+---
+
+### **Option 1: Install Traefik via Helm (Recommended)**
+If you're using Helm to install Traefik:
+
+```bash
+helm repo add traefik https://helm.traefik.io/traefik
+helm repo update
+helm install traefik traefik/traefik --namespace traefik --create-namespace
+```
+
+This will install Traefik along with the necessary CRDs.
+
+---
+
+### **Option 2: Install CRDs Manually**
+
+If you want to install just the CRDs manually, run:
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/traefik/traefik/v2.10/docs/content/reference/dynamic-configuration/kubernetes-crd-definition-v1.yml
+```
+
+> Replace `v2.10` with the Traefik version you're using.
+
+---
+
+### Verify Middleware CRD is Installed
+After installation, check CRDs:
+
+```bash
+kubectl get crds | grep traefik
+```
+
+You should see something like:
+
+```
+middlewares.traefik.containo.us
+```
+
+Once the CRD is installed, you can re-apply your `middleware.yaml`:
+
+```bash
+kubectl apply -f middleware.yaml
+```
