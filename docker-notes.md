@@ -1,5 +1,7 @@
 ## References
 https://securitylabs.datadoghq.com/articles/container-security-fundamentals-part-2/
+https://github.com/DeepakBomjan/devops/blob/main/Docker/docker-advanced-tip.md
+
 
 The `BUILD ARG` (build-time argument) in a Dockerfile allows you to pass variables during the **image build process**, not at runtime. These are helpful for customizing image builds without hardcoding values.
 
@@ -240,4 +242,314 @@ It **automatically**:
 - All microservices have the same Dockerfile structure.
 - DRY: You avoid repeating common build steps.
 - Easy onboarding for teams using your base image.
+
+
+## Networking
+ Below are **practical Docker networking commands** to create **custom networks with specific CIDR blocks**, and use them with containers.
+
+---
+
+## 🧱 1. Create a Custom Bridge Network with CIDR
+
+```bash
+docker network create \
+  --driver bridge \
+  --subnet 192.168.100.0/24 \
+  --gateway 192.168.100.1 \
+  custom-net
+```
+
+✅ This creates a user-defined **bridge network** named `custom-net`:
+- Subnet: `192.168.100.0/24`
+- Gateway: `192.168.100.1`
+
+---
+
+## 🚀 2. Run a Container in That Network
+
+```bash
+docker run -dit \
+  --name web1 \
+  --network custom-net \
+  --ip 192.168.100.10 \
+  nginx
+```
+
+✅ Runs an `nginx` container with a **fixed IP** `192.168.100.10` on `custom-net`.
+
+---
+
+## 🔄 3. Connect Another Container to the Same Network
+
+```bash
+docker run -dit \
+  --name web2 \
+  --network custom-net \
+  --ip 192.168.100.11 \
+  nginx
+```
+
+✅ Now `web1` and `web2` can communicate via IP or container name.
+
+Test connectivity from inside a container:
+
+```bash
+docker exec -it web1 ping web2
+```
+
+---
+
+## 🧹 4. List Networks
+
+```bash
+docker network ls
+```
+
+---
+
+## 🔍 5. Inspect a Network
+
+```bash
+docker network inspect custom-net
+```
+
+---
+
+## ❌ 6. Remove a Network
+
+```bash
+docker network rm custom-net
+```
+
+⚠️ You must remove or disconnect containers before deleting the network.
+
+
+
+## 📥 Copy File **FROM Host TO Container**
+
+```bash
+docker cp ./myfile.txt container_name:/app/myfile.txt
+```
+
+✅ This copies `myfile.txt` from your local directory into `/app/` inside the container.
+
+Example:
+```bash
+docker cp config.json web1:/etc/nginx/config.json
+```
+
+---
+
+## 📤 Copy File **FROM Container TO Host**
+
+```bash
+docker cp container_name:/app/output.log ./output.log
+```
+
+✅ This copies `output.log` from the container to your current host directory.
+
+---
+
+## 📁 Copy a Folder (Both Directions Work)
+
+```bash
+docker cp ./myfolder container_name:/app/myfolder      # To container
+docker cp container_name:/app/myfolder ./myfolder_copy # From container
+```
+
+---
+
+## 🧠 Notes
+
+- You can use container **name** or **ID**.
+- Paths must be **absolute** inside the container (e.g., `/app/file.txt`, not `app/file.txt`).
+
+## Docker compose
+Here’s a complete example of a `docker-compose.yml` file that uses **multiple networks** and **volumes** — a common pattern for microservices or app stacks (e.g., web + db).
+
+---
+
+## 📄 `docker-compose.yml`
+
+```yaml
+version: "3.8"
+
+services:
+  web:
+    image: nginx:latest
+    container_name: web-app
+    ports:
+      - "8080:80"
+    networks:
+      - frontend
+    volumes:
+      - web-content:/usr/share/nginx/html
+
+  app:
+    image: node:18
+    container_name: app-service
+    working_dir: /app
+    command: ["node", "-e", "require('http').createServer((_,res)=>res.end('Hello')).listen(3000)"]
+    networks:
+      - frontend
+      - backend
+    volumes:
+      - app-code:/app
+
+  db:
+    image: postgres:15
+    container_name: db-service
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    networks:
+      - backend
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  web-content:
+  app-code:
+  db-data:
+
+networks:
+  frontend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+  backend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
+```
+
+---
+
+## 🧪 Usage
+
+```bash
+docker-compose up -d
+```
+
+---
+
+## 🧹 Cleanup
+
+```bash
+docker-compose down -v   # Remove containers + volumes
+```
+
+---
+
+This sets up:
+- Two **networks**: `frontend`, `backend` (isolating app layers)
+- Three **volumes**: `web-content`, `app-code`, `db-data`
+- Three **services**: NGINX, Node.js, PostgreSQL — with correct scoping.
+
+## Docker Environment Variables
+
+https://docs.docker.com/compose/how-tos/environment-variables/set-environment-variables/
+
+You can supply **environment variables to Docker containers** in several ways. Here's a clear breakdown of all common methods:
+
+---
+
+## ✅ 1. **Using `docker run` command line**
+
+```bash
+docker run -e VAR_NAME=value -e ENV=prod nginx
+```
+
+You can pass multiple `-e` options for multiple variables.
+
+---
+
+## ✅ 2. **From an `.env` file via `--env-file`**
+
+Create a file `app.env`:
+
+```env
+ENV=production
+PORT=8080
+```
+
+Then run:
+
+```bash
+docker run --env-file app.env nginx
+```
+
+> ✅ Loads all variables from the file into the container's environment.
+
+---
+
+## ✅ 3. **In `Dockerfile` using `ENV`**
+
+```Dockerfile
+FROM node:18
+
+ENV NODE_ENV=production
+ENV PORT=3000
+```
+
+> 🔸 These are baked into the image and always present in the container unless overridden.
+
+---
+
+## ✅ 4. **In `docker-compose.yml`**
+
+### a. Inline `environment` block
+
+```yaml
+services:
+  app:
+    image: node:18
+    environment:
+      - NODE_ENV=production
+      - DB_USER=${DB_USER}
+```
+
+### b. With `env_file`
+
+```yaml
+services:
+  app:
+    image: node:18
+    env_file:
+      - .env
+```
+
+> 🔸 You can combine both `env_file` and `environment`.
+
+---
+
+## ✅ 5. **Build-time with `--build-arg` and `ARG` (not runtime)**
+
+In `Dockerfile`:
+
+```Dockerfile
+ARG APP_VERSION
+ENV VERSION=$APP_VERSION
+```
+
+Then during build:
+
+```bash
+docker build --build-arg APP_VERSION=1.2.3 .
+```
+
+> 🧠 `ARG` is available **only at build time**, not at runtime.
+
+---
+
+## 🧪 Priority Order (Override Hierarchy)
+
+| Source                | Overwrites Lower? |
+|-----------------------|-------------------|
+| `docker run -e`       | ✅ Overrides all   |
+| `--env-file`          | ✅ Overrides `ENV` in Dockerfile |
+| `docker-compose env`  | ✅ Overrides `.env` |
+| `ENV` in Dockerfile   | ❌ Lowest priority |
 
