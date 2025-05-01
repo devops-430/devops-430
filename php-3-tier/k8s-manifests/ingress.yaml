@@ -3,6 +3,8 @@ kind: Ingress
 metadata:
   name: ingress
   namespace: default
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: default-stripprefix@kubernetescrd
 spec:
   rules:
   - http:
