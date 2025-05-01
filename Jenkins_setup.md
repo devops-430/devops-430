@@ -113,3 +113,6 @@ https://openlabfreeci.servebeer.com
 ```
 You should see your backend (running on port 8080) served securely via HTTPS.
 
+## Adding Jenkins Build Agent
+https://www.jenkins.io/blog/2022/12/27/run-jenkins-agent-as-a-service/
+
