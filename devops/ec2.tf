@@ -1,12 +1,13 @@
 provider "aws" {
     region = "us-east-1"
-    access_key = "AKIA6ODVADIFE3WKWQZQ"
-    secret_key = "cp4PfNWZncOnsxa80eWtVcnDmqMZhyHXJPGDiHe"
+    access_key = ""
+    secret_key = ""
 }
 variable "instance_type" {
     type = string
     default = "t2.nano"
 }
+
 
 # data "aws_ami" "ubuntu" {
 #   most_recent = true
@@ -45,7 +46,8 @@ resource "aws_key_pair" "my_key_pair" {
 }
 
 resource "aws_instance" "my_instance" {
-    ami = "ami-052cef01758351d39"
+    ami = "ami-052cef01758351d39"   #ami-0f9de6e2d2f067fca
+
     instance_type = var.instance_type
     vpc_security_group_ids = [aws_security_group.my_security_group.id]
     key_name = aws_key_pair.my_key_pair.key_name
