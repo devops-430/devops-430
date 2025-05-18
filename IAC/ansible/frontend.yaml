@@ -1,0 +1,37 @@
+---
+- name: Deploy frontend via Docker on remote host
+  hosts: frontend
+  become: true
+  vars:
+    deploy_dir: /home/ubuntu/deployment
+    local_frontend_dir: /home/ubuntu/openlabfree/php-3-tier/frontend
+    remote_frontend_dir: "{{ deploy_dir }}/frontend"
+    container_name: frontend-httpd
+
+  tasks:
+    - name: Ensure deployment directory exists
+      file:
+        path: "{{ deploy_dir }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
+    - name: Copy local frontend folder to remote deployment directory
+      copy:
+        src: "{{ local_frontend_dir }}"
+        dest: "{{ deploy_dir }}"
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+    - name: remove container if exist
+      shell: |
+        docker rm -f {{ container_name }} || true
+    - name: Run the frontend container
+      shell: |
+        docker run -d \
+        -p 3000:80 \
+        -v {{ remote_frontend_dir }}:/usr/local/apache2/htdocs \
+        --name={{ container_name }} \
+        httpd:latest
+
