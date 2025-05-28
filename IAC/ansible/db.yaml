@@ -1,0 +1,46 @@
+- name: deploy db
+  hosts: db
+  become: true
+  vars:
+    mysql_root_password: "rootpassword"
+    mysql_database: "appdb"
+    deploy_dir: /home/ubuntu/deployment
+    local_db_dir: /home/ubuntu/openlabfree/php-3-tier/db
+    remote_db_dir: "{{ deploy_dir }}/db"
+    mysql_data_dir: "{{ remote_db_dir }}/data"
+    mysql_container_name: mysql
+  tasks:
+    - name: Create MySQL data and db directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - "{{ remote_db_dir }}"
+        - "{{ mysql_data_dir }}"
+    - name: Copy db schema
+      copy:
+        src: "{{ local_db_dir }}/dump.sql"
+        dest: "{{ remote_db_dir }}/dump.sql"
+        mode: '0644'
+
+    - name: Pull MySQL image
+      docker_image:
+        name: mysql:8.0
+        source: pull
+        force_source: true
+
+    - name: Create MySQL container
+      docker_container:
+        name: mysql
+        image: mysql:8.0
+        state: started
+        restart_policy: always
+        env:
+          MYSQL_ROOT_PASSWORD: "rootpassword"
+          MYSQL_DATABASE: "appdb"
+        ports:
+          - "3306:3306"
+        volumes:
+          - /var/lib/mysql:/var/lib/mysql
+          - ./db:/docker-entrypoint-initdb.d

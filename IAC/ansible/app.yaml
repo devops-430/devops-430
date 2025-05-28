@@ -1,0 +1,60 @@
+---
+- name: Deploy frontend via Docker on remote host
+  hosts: app
+  become: true
+  vars:
+    deploy_dir: /home/ubuntu/deployment
+    local_frontend_dir: /home/ubuntu/openlabfree/php-3-tier/frontend
+    local_backend_dir: /home/ubuntu/openlabfree/php-3-tier/api
+    remote_frontend_dir: "{{ deploy_dir }}/frontend"
+    remote_backend_dir: "{{ deploy_dir }}/api"
+    frontend_container_name: frontend-httpd
+    backend_container_name: backend-httpd
+
+  tasks:
+    - name: Ensure deployment directory exists
+      file:
+        path: "{{ deploy_dir }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
+    - name: Copy local frontend folder to remote deployment directory
+      copy:
+        src: "{{ local_frontend_dir }}"
+        dest: "{{ deploy_dir }}"
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+    - name: Copy local backend folder to remote deployment directory
+      copy:
+        src: "{{ local_backend_dir }}"
+        dest: "{{ deploy_dir }}"
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
+    - name: remove container if exist
+      shell: |
+        docker rm -f {{ frontend_container_name }} || true
+        docker rm -f {{ backend_container_name }} || true
+    - name: Run containers
+      docker_container:
+        name: "{{ item.name }}"
+        image: httpd:latest
+        state: started
+        ports:
+          - "{{ item.port }}:80"
+        volumes:
+          - "{{ item.volume }}:{{ item.mount_path }}"
+        restart_policy: always
+      loop:
+        - name: "{{ frontend_container_name }}"
+          port: "3000"
+          volume: "{{ remote_frontend_dir }}"
+          mount_path: "/usr/local/apache2/htdocs"
+        - name: "{{ backend_container_name }}"
+          port: "5000"
+          volume: "{{ remote_backend_dir }}"
+          mount_path: "/var/www/html"
