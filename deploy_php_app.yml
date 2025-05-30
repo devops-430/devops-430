@@ -1,0 +1,10 @@
+---
+- hosts: webservers
+  become: yes
+  roles:
+    - role: php_3tier
+      vars:
+        app_install_path: /opt/php-3tier
+        db_password: your_secure_password  # Change this in production
+        frontend_port: 3000
+        backend_port: 5000 

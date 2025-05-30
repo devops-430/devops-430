@@ -1,0 +1,55 @@
+---
+- name: Install required packages
+  apt:
+    name:
+      - docker.io
+      - docker-compose
+      - python3-pip
+    state: present
+    update_cache: yes
+  become: yes
+
+- name: Install Docker Python module
+  pip:
+    name: docker
+    state: present
+
+- name: Ensure Docker service is running
+  service:
+    name: docker
+    state: started
+    enabled: yes
+  become: yes
+
+- name: Create application directory
+  file:
+    path: "{{ app_install_path }}"
+    state: directory
+    mode: '0755'
+
+- name: Copy application files
+  copy:
+    src: "{{ item }}"
+    dest: "{{ app_install_path }}/"
+  with_items:
+    - frontend
+    - api
+    - db
+    - docker-compose.yaml
+
+- name: Deploy application using Docker Compose
+  docker_compose:
+    project_src: "{{ app_install_path }}"
+    state: present
+    build: yes
+  register: docker_compose_result
+
+- name: Wait for services to be ready
+  wait_for:
+    host: "{{ item.host }}"
+    port: "{{ item.port }}"
+    timeout: 300
+  with_items:
+    - { host: "localhost", port: 3000 }
+    - { host: "localhost", port: 5000 }
+  when: docker_compose_result.changed 

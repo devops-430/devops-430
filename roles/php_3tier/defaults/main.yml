@@ -1,0 +1,15 @@
+---
+# Default installation path for the application
+app_install_path: /opt/php-3tier
+
+# Docker Compose configuration
+docker_compose_version: '3'
+
+# Database configuration
+db_name: todo_app
+db_user: todo_admin
+db_password: password
+
+# Port configurations
+frontend_port: 3000
+backend_port: 5000 
