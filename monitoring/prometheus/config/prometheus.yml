@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 2s
+  scrape_timeout: 1s  # Example timeout, adjust as needed
+  external_labels:
+    monitor: 'nodechain-monitor'
+
+scrape_configs:
+  - job_name: 'prometheus'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['localhost:9090']
+      - targets: ['localhost:9100']
+        labels:
+          service: 'node-exporter-prometheus-host'
+
