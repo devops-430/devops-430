@@ -9,6 +9,7 @@
     region: "us-east-1"
     instance_type: "t3.medium"
     aws_profile: "lab"
+    cluster_size: 3  # Number of worker nodes (1 master + N workers)
 
   environment:
     AWS_PROFILE: "{{ aws_profile }}"
@@ -167,9 +168,9 @@
       debug:
         var: master_instance
 
-    - name: Create worker node
+    - name: Create worker nodes
       amazon.aws.ec2_instance:
-        name: "k3s-worker"
+        name: "k3s-worker-{{ item }}"
         instance_type: "{{ instance_type }}"
         image_id: "{{ ami_info.images[0].image_id }}"
         key_name: k3s-key
@@ -180,11 +181,12 @@
             groups:
               - k3s-sg
         tags:
-          Name: "k3s-worker"
+          Name: "k3s-worker-{{ item }}"
           Role: "worker"
         wait: true
         state: present
-      register: worker_instance
+      register: worker_instances
+      loop: "{{ range(1, cluster_size + 1) | list }}"
 
     - name: Wait for instances to be ready
       pause:
@@ -197,7 +199,9 @@
           [master]
           {{ master_instance.instances[0].public_ip_address }} ansible_user=ubuntu ansible_ssh_private_key_file=./k3s-key ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
           [worker]
-          {{ worker_instance.instances[0].public_ip_address }} ansible_user=ubuntu ansible_ssh_private_key_file=./k3s-key ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+          {% for worker in worker_instances.results %}
+          {{ worker.instances[0].public_ip_address }} ansible_user=ubuntu ansible_ssh_private_key_file=./k3s-key ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+          {% endfor %}
 
           [k3s_cluster:children]
           master
@@ -209,7 +213,10 @@
           K3s Cluster Created!
           
           Master: {{ master_instance.instances[0].public_ip_address }}
-          Worker: {{ worker_instance.instances[0].public_ip_address }}
+          Workers:
+          {% for worker in worker_instances.results %}
+          - Worker {{ loop.index }}: {{ worker.instances[0].public_ip_address }}
+          {% endfor %}
           
           Next: ansible-playbook -i k3s-inventory.ini configure-k3s.yaml
 
@@ -221,13 +228,14 @@
         ansible_ssh_private_key_file: ./k3s-key
         ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 
-    - name: Add worker to inventory
+    - name: Add worker nodes to inventory
       add_host:
-        name: "{{ worker_instance.instances[0].public_ip_address }}"
+        name: "{{ item.instances[0].public_ip_address }}"
         groups: worker
         ansible_user: ubuntu
         ansible_ssh_private_key_file: ./k3s-key
         ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+      loop: "{{ worker_instances.results }}"
 
     - name: Add k3s_cluster group
       group_by:
@@ -240,24 +248,48 @@
   vars:
     ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
     region: "us-east-1"
+    cluster_size: 3
 
   tasks:
-    - name: Set hostname
+    - name: Set hostname for master
       hostname:
-        name: "{{ 'k3s-master' if inventory_hostname in groups['master'] else 'k3s-worker' }}"
+        name: "k3s-master"
+      when: inventory_hostname in groups['master']
 
-    - name: Update /etc/hostname
+    - name: Set hostname for workers
+      hostname:
+        name: "k3s-worker-{{ groups['worker'].index(inventory_hostname) + 1 }}"
+      when: inventory_hostname in groups['worker']
+
+    - name: Update /etc/hostname for master
       copy:
-        content: "{{ 'k3s-master' if inventory_hostname in groups['master'] else 'k3s-worker' }}"
+        content: "k3s-master"
         dest: /etc/hostname
         mode: '0644'
+      when: inventory_hostname in groups['master']
 
-    - name: Update /etc/hosts
+    - name: Update /etc/hostname for workers
+      copy:
+        content: "k3s-worker-{{ groups['worker'].index(inventory_hostname) + 1 }}"
+        dest: /etc/hostname
+        mode: '0644'
+      when: inventory_hostname in groups['worker']
+
+    - name: Update /etc/hosts with unique hostnames
       lineinfile:
         path: /etc/hosts
-        line: "{{ item }} {{ 'k3s-master' if item in groups['master'] else 'k3s-worker' }}"
+        line: "{{ item }} {{ 'k3s-master' if item in groups['master'] else 'k3s-worker-' + (groups['worker'].index(item) + 1) | string }}"
         state: present
       loop: "{{ groups['master'] + groups['worker'] }}"
+
+    - name: Reboot to apply hostname changes
+      reboot:
+      when: inventory_hostname in groups['worker']
+
+    - name: Wait for workers to come back online
+      wait_for_connection:
+        timeout: 300
+      when: inventory_hostname in groups['worker']
 
     - name: Install NFS client packages
       apt:
@@ -321,44 +353,161 @@
         k3s_token: "{{ node_token.content | b64decode }}"
       when: inventory_hostname in groups['master']
 
-    - name: Copy token to worker
+    - name: Copy token to workers
       copy:
         content: "{{ hostvars[groups['master'][0]]['k3s_token'] }}"
         dest: /tmp/k3s-token
         mode: '0600'
       when: inventory_hostname in groups['worker']
 
-    - name: Install k3s agent on worker
-      shell: curl -sfL https://get.k3s.io | K3S_URL=https://k3s-master:6443 K3S_TOKEN=$(cat /tmp/k3s-token) sh -
+    - name: Check if k3s agent is already running properly
+      shell: sudo systemctl is-active k3s-agent
+      register: k3s_agent_active
+      when: inventory_hostname in groups['worker']
+      ignore_errors: yes
+
+    - name: Check current nodes on master
+      shell: k3s kubectl get nodes --no-headers | wc -l
+      register: current_node_count
+      when: inventory_hostname in groups['master']
+
+    - name: Set fact for expected node count
+      set_fact:
+        expected_node_count: "{{ cluster_size + 1 }}"
+      when: inventory_hostname in groups['master']
+
+    - name: Check if cleanup is needed
+      set_fact:
+        cleanup_needed: "{{ (current_node_count.stdout | int) < (expected_node_count | int) }}"
+      when: inventory_hostname in groups['master']
+
+    - name: Display cleanup status
+      debug:
+        msg: "Current nodes: {{ current_node_count.stdout }}, Expected: {{ expected_node_count }}, Cleanup needed: {{ cleanup_needed }}"
+      when: inventory_hostname in groups['master']
+
+    - name: Skip cleanup - workers already joined
+      debug:
+        msg: "All workers are already joined to the cluster. Skipping cleanup and reinstallation."
+      when: 
+        - inventory_hostname in groups['master']
+        - not (hostvars[groups['master'][0]]['cleanup_needed'] | default(false))
+
+    - name: Cleanup and reinstall k3s agent on workers
+      block:
+        - name: Stop k3s agent on workers
+          systemd:
+            name: k3s-agent
+            state: stopped
+          ignore_errors: yes
+
+        - name: Kill all k3s processes on workers
+          shell: /usr/local/bin/k3s-killall.sh
+          ignore_errors: yes
+
+        - name: Uninstall k3s completely on workers
+          shell: /usr/local/bin/k3s-uninstall.sh
+          ignore_errors: yes
+
+        - name: Clean up k3s agent data directories on workers
+          file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - /var/lib/rancher/k3s/agent
+            - /etc/rancher/node
+            - /var/lib/kubelet
+            - /var/lib/cni
+            - /etc/cni
+            - /run/flannel
+            - /var/lib/rancher/k3s/data
+            - /var/lib/rancher/k3s/server
+            - /etc/rancher/k3s
+          ignore_errors: yes
+
+        - name: Clean up any remaining k3s files on workers
+          file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - /usr/local/bin/k3s
+            - /usr/local/bin/k3s-killall.sh
+            - /usr/local/bin/k3s-uninstall.sh
+          ignore_errors: yes
+
+        - name: Install k3s agent on workers
+          shell: curl -sfL https://get.k3s.io | K3S_URL=https://{{ groups['master'][0] }}:6443 K3S_TOKEN=$(cat /tmp/k3s-token) sh -
+
+      when: 
+        - inventory_hostname in groups['worker']
+        - hostvars[groups['master'][0]]['cleanup_needed'] | default(false)
+
+    - name: Install k3s agent on workers (if not running)
+      shell: curl -sfL https://get.k3s.io | K3S_URL=https://{{ groups['master'][0] }}:6443 K3S_TOKEN=$(cat /tmp/k3s-token) sh -
+      when: 
+        - inventory_hostname in groups['worker']
+        - not (hostvars[groups['master'][0]]['cleanup_needed'] | default(false))
+        - k3s_agent_active.rc != 0
+
+    - name: Wait for k3s agent to start on workers
+      systemd:
+        name: k3s-agent
+        state: started
       when: inventory_hostname in groups['worker']
 
-    - name: Wait for worker to join
+    - name: Wait a moment for agent to initialize
+      pause:
+        seconds: 10
+      when: inventory_hostname in groups['worker']
+
+    - name: Check k3s agent status and logs
+      block:
+        - name: Check k3s agent status on workers
+          shell: sudo systemctl status k3s-agent
+          register: k3s_agent_status
+          ignore_errors: yes
+
+        - name: Display k3s agent status
+          debug:
+            var: k3s_agent_status
+
+        - name: Check k3s agent logs on workers
+          shell: sudo journalctl -u k3s-agent -n 10
+          register: k3s_agent_logs
+          ignore_errors: yes
+
+        - name: Display k3s agent logs
+          debug:
+            var: k3s_agent_logs
+      when: inventory_hostname in groups['worker']
+
+    - name: Wait for all workers to join
       shell: k3s kubectl get nodes
       register: nodes
-      until: nodes.stdout_lines | length >= 2
+      until: nodes.stdout_lines | length >= (cluster_size + 1)
       retries: 20
       delay: 15
       when: inventory_hostname in groups['master']
 
-    - name: Install Helm
-      shell: |
-        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-      when: inventory_hostname in groups['master']
+    - name: Install Helm and EFS CSI Driver
+      block:
+        - name: Install Helm
+          shell: |
+            curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-    - name: Configure Helm to use k3s kubeconfig
-      shell: |
-        export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-        helm repo add aws-efs-csi-driver https://kubernetes-sigs.github.io/aws-efs-csi-driver/
-        helm repo update
-        helm upgrade --install aws-efs-csi-driver aws-efs-csi-driver/aws-efs-csi-driver \
-          --namespace kube-system \
-          --set controller.serviceAccount.create=false \
-          --set controller.serviceAccount.name=efs-csi-controller-sa \
-          --kubeconfig /etc/rancher/k3s/k3s.yaml
-      when: inventory_hostname in groups['master']
+        - name: Configure Helm to use k3s kubeconfig
+          shell: |
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            helm repo add aws-efs-csi-driver https://kubernetes-sigs.github.io/aws-efs-csi-driver/
+            helm repo update
+            helm upgrade --install aws-efs-csi-driver aws-efs-csi-driver/aws-efs-csi-driver \
+              --namespace kube-system \
+              --set controller.serviceAccount.create=false \
+              --set controller.serviceAccount.name=efs-csi-controller-sa \
+              --kubeconfig /etc/rancher/k3s/k3s.yaml
 
-    - name: Wait for EFS CSI Driver to be ready
-      shell: k3s kubectl wait --for=condition=ready pod -l app=efs-csi-node -n kube-system --timeout=300s
+        - name: Wait for EFS CSI Driver to be ready
+          shell: k3s kubectl wait --for=condition=ready pod -l app=efs-csi-node -n kube-system --timeout=300s
       when: inventory_hostname in groups['master']
 
     - name: Show cluster status
