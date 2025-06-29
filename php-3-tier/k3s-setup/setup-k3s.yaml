@@ -4,6 +4,7 @@
   gather_facts: false
   collections:
     - amazon.aws
+    - community.aws
   vars:
     region: "us-east-1"
     instance_type: "t3.medium"
@@ -103,6 +104,29 @@
       debug:
         var: sg_info
 
+    - name: Create EFS file system
+      community.aws.efs:
+        state: present
+        name: "k3s-efs"
+        region: "{{ region }}"
+        tags:
+          Name: "k3s-efs"
+          Purpose: "k3s-storage"
+        targets:
+          - subnet_id: "{{ subnet_info.subnets[0].subnet_id }}"
+            security_groups: ["{{ sg_info.group_id }}"]
+      register: efs_info
+
+    - name: Debug EFS info
+      debug:
+        var: efs_info
+
+    - name: Debug EFS info structure
+      debug:
+        msg: |
+          EFS Info Keys: {{ efs_info.keys() | list }}
+          EFS Info Type: {{ efs_info | type_debug }}
+
     - name: Create key pair
       amazon.aws.ec2_key:
         name: k3s-key
@@ -171,9 +195,9 @@
         dest: ./k3s-inventory.ini
         content: |
           [master]
-          {{ master_instance.instances[0].public_ip_address }} ansible_user=ubuntu ansible_ssh_private_key_file=./k3s-key
+          {{ master_instance.instances[0].public_ip_address }} ansible_user=ubuntu ansible_ssh_private_key_file=./k3s-key ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
           [worker]
-          {{ worker_instance.instances[0].public_ip_address }} ansible_user=ubuntu ansible_ssh_private_key_file=./k3s-key
+          {{ worker_instance.instances[0].public_ip_address }} ansible_user=ubuntu ansible_ssh_private_key_file=./k3s-key ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 
           [k3s_cluster:children]
           master
@@ -195,6 +219,7 @@
         groups: master
         ansible_user: ubuntu
         ansible_ssh_private_key_file: ./k3s-key
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 
     - name: Add worker to inventory
       add_host:
@@ -202,6 +227,7 @@
         groups: worker
         ansible_user: ubuntu
         ansible_ssh_private_key_file: ./k3s-key
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 
     - name: Add k3s_cluster group
       group_by:
@@ -211,6 +237,9 @@
   hosts: master:worker
   become: true
   gather_facts: true
+  vars:
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+    region: "us-east-1"
 
   tasks:
     - name: Set hostname
@@ -229,6 +258,41 @@
         line: "{{ item }} {{ 'k3s-master' if item in groups['master'] else 'k3s-worker' }}"
         state: present
       loop: "{{ groups['master'] + groups['worker'] }}"
+
+    - name: Install NFS client packages
+      apt:
+        name:
+          - nfs-common
+        state: present
+        update_cache: yes
+
+    - name: Create PHP demo app data directory
+      file:
+        path: /var/phpdemoapp/data
+        state: directory
+        mode: '0755'
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Mount EFS to PHP demo app data directory
+      mount:
+        path: /var/phpdemoapp/data
+        src: "{{ hostvars['localhost']['efs_info']['efs']['file_system_id'] }}.efs.{{ region }}.amazonaws.com:/"
+        fstype: nfs4
+        opts: nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2
+        state: mounted
+
+    - name: Set EFS mount permissions
+      file:
+        path: /var/phpdemoapp/data
+        mode: '0777'
+        recurse: yes
+
+    - name: Add EFS mount to fstab for persistence
+      lineinfile:
+        path: /etc/fstab
+        line: "{{ hostvars['localhost']['efs_info']['efs']['file_system_id'] }}.efs.{{ region }}.amazonaws.com:/ /var/phpdemoapp/data nfs4 nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 0 0"
+        state: present
 
     - name: Install k3s server on master
       shell: curl -sfL https://get.k3s.io | sh -
@@ -276,6 +340,27 @@
       delay: 15
       when: inventory_hostname in groups['master']
 
+    - name: Install Helm
+      shell: |
+        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      when: inventory_hostname in groups['master']
+
+    - name: Configure Helm to use k3s kubeconfig
+      shell: |
+        export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+        helm repo add aws-efs-csi-driver https://kubernetes-sigs.github.io/aws-efs-csi-driver/
+        helm repo update
+        helm upgrade --install aws-efs-csi-driver aws-efs-csi-driver/aws-efs-csi-driver \
+          --namespace kube-system \
+          --set controller.serviceAccount.create=false \
+          --set controller.serviceAccount.name=efs-csi-controller-sa \
+          --kubeconfig /etc/rancher/k3s/k3s.yaml
+      when: inventory_hostname in groups['master']
+
+    - name: Wait for EFS CSI Driver to be ready
+      shell: k3s kubectl wait --for=condition=ready pod -l app=efs-csi-node -n kube-system --timeout=300s
+      when: inventory_hostname in groups['master']
+
     - name: Show cluster status
       shell: |
         echo "=== K3s Cluster Status ==="
@@ -283,6 +368,19 @@
         echo ""
         echo "=== Cluster Info ==="
         k3s kubectl cluster-info
+        echo ""
+        echo "=== EFS Mount Status ==="
+        df -h /var/phpdemoapp/data
+        echo ""
+        echo "=== EFS File System Info ==="
+        echo "EFS ID: {{ hostvars['localhost']['efs_info']['efs']['file_system_id'] }}"
+        echo "EFS DNS: {{ hostvars['localhost']['efs_info']['efs']['file_system_id'] }}.efs.{{ region }}.amazonaws.com"
+        echo ""
+        echo "=== EFS CSI Driver Status ==="
+        k3s kubectl get pods -n kube-system | grep efs-csi
+        echo ""
+        echo "=== Storage Classes ==="
+        k3s kubectl get storageclass
       when: inventory_hostname in groups['master']
       register: cluster_status
 
@@ -296,3 +394,9 @@
         path: /tmp/k3s-token
         state: absent
       when: inventory_hostname in groups['worker']
+    
+    - name: Allow ubuntu user to use kubectl
+      shell: |
+        sudo chown ubuntu:ubuntu /etc/rancher/k3s/k3s.yaml
+        sudo chmod 644 /etc/rancher/k3s/k3s.yaml
+      when: inventory_hostname in groups['master']
