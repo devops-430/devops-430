@@ -1,6 +1,8 @@
 name: Deploy S3
 on:
-  push: null
+  push:
+    branches:
+      - deepak-devops-430
 jobs:
   deploy-to-s3:
     runs-on: ubuntu-latest
@@ -16,5 +18,5 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Deploy to S3
         run: |
-          aws s3 sync index.html s3://${{ vars.S3_BUCKET_NAME }} --delete
+          aws s3 sync index.html s3://${{ vars.S3_BUCKET_NAME_DEEPAK }} --delete
     
