@@ -1,27 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>My First HTML Page</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #333399;
+      color: white;
+      padding: 15px 20px;
+      text-align: center;
+    }
+
+    nav {
+      background-color: #4444aa;
+      display: flex;
+      justify-content: center;
+      padding: 10px;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: bold;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+    }
+
+    main {
       padding: 20px;
     }
+
     h1 {
       color: #333399;
     }
+
     p {
       color: #555;
+    }
+
+    button {
+      background-color: #333399;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      margin-top: 15px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #222266;
+    }
+
+    footer {
+      background-color: #ddd;
+      text-align: center;
+      padding: 15px;
+      margin-top: 40px;
     }
   </style>
 </head>
 <body>
 
-  <h1>Welcome to My Web Page</h1>
-  <p>This is a simple HTML file created for demonstration.</p>
+  <header>
+    <h1>Welcome to My Web Page</h1>
+  </header>
+
+  <nav>
+    <a href="#">Home</a>
+    <a href="#">About</a>
+    <a href="#">Contact</a>
+  </nav>
+
+  <main>
+    <p>This is a simple HTML file created for demonstration. It's now more interactive and stylish!</p>
+    <button onclick="alert('You clicked the button!')">Click Me</button>
+  </main>
+
+  <footer>
+    &copy; 2025 My First Website. All rights reserved.
+  </footer>
 
 </body>
 </html>
