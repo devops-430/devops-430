@@ -20,4 +20,4 @@ jobs:
      - name: Deploy to S3
        working-directory: AWS
        run: |
-         aws s3 sync index.html s3://${{ secrets.S3_BUCKET_NAME_ISU }} --delete
+         aws s3 sync . s3://${{ secrets.S3_BUCKET_NAME_ISU }} --delete
