@@ -38,6 +38,7 @@ AMI_ID=$(aws ec2 describe-images \
  --query "Images[*].[ImageId]" \
  --output text | sort -k3 -r | head -n 1)
 
+echo "AMI ID: $AMI_ID"
 echo "Get Security Group ID"
 SG_ID=$(aws ec2 describe-security-groups \
  --filters "Name=vpc-id,Values=$VPC_ID" "Name=group-name,Values=default" \
@@ -45,6 +46,14 @@ SG_ID=$(aws ec2 describe-security-groups \
  --output text | head -n 1 | awk '{print $1}')
 
 echo "Security Group ID: $SG_ID"
+
+echo "allow ssh access to the security group"
+
+aws ec2 authorize-security-group-ingress \
+ --group-id $SG_ID \
+ --protocol tcp \
+ --port 22 \
+ --cidr 0.0.0.0/0
 
 echo "Create Key Pair"
 read -p "Enter Key Pair Name: " KEY_PAIR_NAME
@@ -61,6 +70,7 @@ aws ec2 run-instances \
  --key-name $KEY_PAIR_NAME \
  --security-group-ids $SG_ID \
  --subnet-id $SUBNET_ID \
+ --user-data file://install-docker.sh \
  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=Ubuntu2204VM-test}]' > ec2_instance_creation_log.json
 
 
